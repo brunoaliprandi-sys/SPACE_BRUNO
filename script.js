@@ -30,6 +30,7 @@ const robotCleaner = document.getElementById("robot-cleaner");
 const robotFrame = document.getElementById("robot-frame");
 const robotToggle = document.getElementById("robot-toggle");
 const robotToggleHint = robotToggle?.querySelector(".hud-trigger__hint");
+const audioToggle = document.getElementById("audio-toggle");
 const hudTelemetryMetrics = [];
 
 function buildFrames(basePath, frameCount) {
@@ -90,6 +91,119 @@ const robotState = {
   lastFrameTime: 0,
   loopsUntilModeSwap: 1,
 };
+
+function createAudioTrack(src, options = {}) {
+  const audio = new Audio(src);
+  audio.preload = "auto";
+  audio.loop = Boolean(options.loop);
+  audio.volume = options.volume ?? 1;
+  audio.setAttribute("playsinline", "");
+  audio.load();
+  return audio;
+}
+
+const audioTracks = {
+  ambience: createAudioTrack("assets/audio/ambience-spaceship.ogg", {
+    loop: true,
+    volume: 0.16,
+  }),
+  robotLoop: createAudioTrack("assets/audio/robot-loop.ogg", {
+    loop: true,
+    volume: 0.08,
+  }),
+  uiClick: createAudioTrack("assets/audio/ui-click.ogg", {
+    volume: 0.18,
+  }),
+  robotToggle: createAudioTrack("assets/audio/robot-toggle.ogg", {
+    volume: 0.2,
+  }),
+};
+
+const audioState = {
+  enabled: false,
+  muted: false,
+};
+
+function playLoop(audio) {
+  if (!audio.paused) {
+    return;
+  }
+
+  audio.play().catch(() => {});
+}
+
+function stopLoop(audio, reset = false) {
+  if (!audio.paused) {
+    audio.pause();
+  }
+
+  if (reset) {
+    audio.currentTime = 0;
+  }
+}
+
+function playOneShot(audioTemplate, volumeOverride) {
+  if (!audioState.enabled || audioState.muted) {
+    return;
+  }
+
+  const effect = new Audio(audioTemplate.src);
+  effect.volume = volumeOverride ?? audioTemplate.volume;
+  effect.play().catch(() => {});
+}
+
+function updateAudioToggle() {
+  if (!audioToggle) {
+    return;
+  }
+
+  const isOn = audioState.enabled && !audioState.muted;
+  audioToggle.setAttribute("aria-pressed", String(isOn));
+  audioToggle.textContent = isOn ? "AUDIO ON" : "AUDIO OFF";
+}
+
+function syncSceneAudio() {
+  const shouldPlay = audioState.enabled && !audioState.muted && document.visibilityState === "visible";
+
+  if (shouldPlay) {
+    playLoop(audioTracks.ambience);
+  } else {
+    stopLoop(audioTracks.ambience);
+  }
+
+  if (shouldPlay && robotState.visible) {
+    playLoop(audioTracks.robotLoop);
+  } else {
+    stopLoop(audioTracks.robotLoop, true);
+  }
+
+  updateAudioToggle();
+}
+
+function enableSceneAudio() {
+  if (audioState.enabled) {
+    syncSceneAudio();
+    return;
+  }
+
+  audioState.enabled = true;
+  syncSceneAudio();
+}
+
+function toggleSceneAudio() {
+  const wasOn = audioState.enabled && !audioState.muted;
+
+  if (!wasOn) {
+    audioState.muted = false;
+    enableSceneAudio();
+    playOneShot(audioTracks.uiClick, 0.16);
+    return;
+  }
+
+  playOneShot(audioTracks.uiClick, 0.12);
+  audioState.muted = true;
+  syncSceneAudio();
+}
 
 function clampValue(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -441,6 +555,8 @@ function showRobot() {
   applyRobotTransform();
   startRobotIdleSequence();
   updateRobotToggle();
+  playOneShot(audioTracks.robotToggle, 0.2);
+  syncSceneAudio();
 }
 
 function hideRobot() {
@@ -452,6 +568,8 @@ function hideRobot() {
   robotBay.classList.remove("is-active");
   robotBay.setAttribute("aria-hidden", "true");
   updateRobotToggle();
+  playOneShot(audioTracks.robotToggle, 0.14);
+  syncSceneAudio();
 }
 
 function toggleRobot() {
@@ -583,12 +701,17 @@ function toggleHudPanel(trigger) {
 
 for (const trigger of hudTriggers) {
   trigger.addEventListener("click", () => {
+    playOneShot(audioTracks.uiClick);
     toggleHudPanel(trigger);
   });
 }
 
 robotToggle?.addEventListener("click", () => {
   toggleRobot();
+});
+
+audioToggle?.addEventListener("click", () => {
+  toggleSceneAudio();
 });
 
 document.addEventListener("keydown", (event) => {
@@ -601,11 +724,28 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
+document.addEventListener(
+  "pointerdown",
+  () => {
+    enableSceneAudio();
+  },
+  { passive: true },
+);
+
+document.addEventListener("keydown", () => {
+  enableSceneAudio();
+});
+
+document.addEventListener("visibilitychange", () => {
+  syncSceneAudio();
+});
+
 layoutStasisBay();
 layoutRobotBay();
 layoutHud();
 setupHudTelemetry();
 refreshHudTelemetry();
+updateAudioToggle();
 window.setInterval(refreshHudTelemetry, 1100);
 window.addEventListener("resize", () => {
   layoutStasisBay();
