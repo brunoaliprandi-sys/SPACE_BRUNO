@@ -33,10 +33,104 @@
         </div>
       </section>
 
-      <div class="hud" aria-hidden="true">
-        <span class="hud__label">BRUNO / STASIS</span>
-        <span class="hud__status">IDLE LOOP</span>
-      </div>
+      <footer class="hud-footer" aria-label="Console di monitoraggio della navicella">
+        <section
+          class="hud-panel hud-panel--health"
+          id="panel-health"
+          aria-hidden="true"
+        >
+          <div class="hud-panel__header">
+            <span class="hud-panel__eyebrow">BIO-MONITOR / LIVE FEED</span>
+            <span class="hud-panel__state hud-panel__state--green">STABILE</span>
+          </div>
+          <h2 class="hud-panel__title">Stato di Salute Attuale</h2>
+          <div class="hud-metrics">
+            <div class="hud-metric">
+              <span class="hud-metric__label">Battito cardiaco</span>
+              <strong class="hud-metric__value hud-metric__value--green">52 BPM</strong>
+              <div class="hud-metric__bar"><span style="--fill: 64%; --tone: #65ff8f;"></span></div>
+            </div>
+            <div class="hud-metric">
+              <span class="hud-metric__label">Respirazione</span>
+              <strong class="hud-metric__value hud-metric__value--green">7.8 RPM</strong>
+              <div class="hud-metric__bar"><span style="--fill: 42%; --tone: #52f08c;"></span></div>
+            </div>
+            <div class="hud-metric">
+              <span class="hud-metric__label">Saturazione O2</span>
+              <strong class="hud-metric__value hud-metric__value--green">99.1%</strong>
+              <div class="hud-metric__bar"><span style="--fill: 91%; --tone: #76ff9e;"></span></div>
+            </div>
+            <div class="hud-metric">
+              <span class="hud-metric__label">Attivita neurale</span>
+              <strong class="hud-metric__value hud-metric__value--red">SOGNO REM / 73%</strong>
+              <div class="hud-metric__bar"><span style="--fill: 73%; --tone: #ff5a68;"></span></div>
+            </div>
+          </div>
+        </section>
+
+        <section
+          class="hud-panel hud-panel--cryo"
+          id="panel-cryo"
+          aria-hidden="true"
+        >
+          <div class="hud-panel__header">
+            <span class="hud-panel__eyebrow">CRYO POD / SUPPORT SYSTEM</span>
+            <span class="hud-panel__state hud-panel__state--red">NOMINALE</span>
+          </div>
+          <h2 class="hud-panel__title">Stato Della Cella Criogenica</h2>
+          <div class="hud-metrics">
+            <div class="hud-metric">
+              <span class="hud-metric__label">Temperatura camera</span>
+              <strong class="hud-metric__value hud-metric__value--red">-186.4 C</strong>
+              <div class="hud-metric__bar"><span style="--fill: 88%; --tone: #ff5d66;"></span></div>
+            </div>
+            <div class="hud-metric">
+              <span class="hud-metric__label">Carica batterie</span>
+              <strong class="hud-metric__value hud-metric__value--green">94%</strong>
+              <div class="hud-metric__bar"><span style="--fill: 94%; --tone: #73ff9b;"></span></div>
+            </div>
+            <div class="hud-metric">
+              <span class="hud-metric__label">Flusso azoto liquido</span>
+              <strong class="hud-metric__value hud-metric__value--green">88 L/MIN</strong>
+              <div class="hud-metric__bar"><span style="--fill: 78%; --tone: #5fff86;"></span></div>
+            </div>
+            <div class="hud-metric">
+              <span class="hud-metric__label">Integrita guarnizioni</span>
+              <strong class="hud-metric__value hud-metric__value--green">100%</strong>
+              <div class="hud-metric__bar"><span style="--fill: 100%; --tone: #7aff9e;"></span></div>
+            </div>
+          </div>
+        </section>
+
+        <div class="hud-footer__dock">
+          <button
+            class="hud-trigger hud-trigger--health"
+            type="button"
+            data-panel-target="panel-health"
+            aria-controls="panel-health"
+            aria-expanded="false"
+          >
+            <span class="hud-trigger__channel">CH-01</span>
+            <span class="hud-trigger__label">Stato di Salute Attuale</span>
+          </button>
+
+          <div class="hud-footer__core">
+            <span class="hud-footer__core-label">BRUNO / STASIS</span>
+            <span class="hud-footer__core-status">IDLE LOOP / MONITOR</span>
+          </div>
+
+          <button
+            class="hud-trigger hud-trigger--cryo"
+            type="button"
+            data-panel-target="panel-cryo"
+            aria-controls="panel-cryo"
+            aria-expanded="false"
+          >
+            <span class="hud-trigger__channel">CH-02</span>
+            <span class="hud-trigger__label">Stato Della Cella Criogenica</span>
+          </button>
+        </div>
+      </footer>
     </main>
 
     <script src="script.js"></script>

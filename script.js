@@ -13,8 +13,10 @@ const STASIS_RECT = {
 const FRAME_COUNT = 36;
 const FRAME_RATE = 12;
 
+const hudFooter = document.querySelector(".hud-footer");
 const stasisBay = document.getElementById("stasis-bay");
 const brunoFrame = document.getElementById("bruno-frame");
+const hudTriggers = document.querySelectorAll(".hud-trigger");
 
 const forwardFrames = Array.from({ length: FRAME_COUNT }, (_, index) => {
   const frameId = String(index).padStart(4, "0");
@@ -70,6 +72,105 @@ function animateBruno(timestamp) {
   window.requestAnimationFrame(animateBruno);
 }
 
+function layoutHudPanels() {
+  if (!hudFooter || !stasisBay) {
+    return;
+  }
+
+  const footerRect = hudFooter.getBoundingClientRect();
+  const bayRect = stasisBay.getBoundingClientRect();
+  const isCompact = window.innerWidth <= 800;
+  const sideGap = isCompact ? 12 : 24;
+  const bayClearance = isCompact ? 12 : 20;
+
+  for (const trigger of hudTriggers) {
+    const panelId = trigger.dataset.panelTarget;
+    const panel = document.getElementById(panelId);
+
+    if (!panel) {
+      continue;
+    }
+
+    if (isCompact) {
+      panel.style.left = "";
+      panel.style.right = "";
+      continue;
+    }
+
+    const panelWidth = panel.offsetWidth;
+    const triggerRect = trigger.getBoundingClientRect();
+    let nextLeft;
+
+    if (panel.classList.contains("hud-panel--health")) {
+      const maxLeft = bayRect.left - bayClearance - panelWidth;
+      const preferredLeft = triggerRect.left - panelWidth * 0.12;
+      nextLeft = Math.max(sideGap, Math.min(preferredLeft, maxLeft));
+    } else {
+      const minLeft = bayRect.right + bayClearance;
+      const preferredLeft = triggerRect.right - panelWidth * 0.88;
+      nextLeft = Math.min(
+        window.innerWidth - sideGap - panelWidth,
+        Math.max(preferredLeft, minLeft),
+      );
+    }
+
+    panel.style.left = `${nextLeft - footerRect.left}px`;
+    panel.style.right = "auto";
+  }
+}
+
+function layoutHud() {
+  layoutHudPanels();
+}
+
+function closeHudPanel(trigger) {
+  const panelId = trigger.dataset.panelTarget;
+  const panel = document.getElementById(panelId);
+
+  if (!panel) {
+    return;
+  }
+
+  panel.classList.remove("is-open");
+  panel.setAttribute("aria-hidden", "true");
+  trigger.setAttribute("aria-expanded", "false");
+}
+
+function toggleHudPanel(trigger) {
+  const panelId = trigger.dataset.panelTarget;
+  const panel = document.getElementById(panelId);
+
+  if (!panel) {
+    return;
+  }
+
+  const nextState = !panel.classList.contains("is-open");
+  panel.classList.toggle("is-open", nextState);
+  panel.setAttribute("aria-hidden", String(!nextState));
+  trigger.setAttribute("aria-expanded", String(nextState));
+  layoutHud();
+}
+
+for (const trigger of hudTriggers) {
+  trigger.addEventListener("click", () => {
+    toggleHudPanel(trigger);
+  });
+}
+
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") {
+    return;
+  }
+
+  for (const trigger of hudTriggers) {
+    closeHudPanel(trigger);
+  }
+});
+
 layoutStasisBay();
-window.addEventListener("resize", layoutStasisBay);
+layoutHud();
+window.addEventListener("resize", () => {
+  layoutStasisBay();
+  layoutHud();
+});
 window.requestAnimationFrame(animateBruno);
