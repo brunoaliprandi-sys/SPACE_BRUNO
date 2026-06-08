@@ -86,7 +86,7 @@ body {
 }
 
 .armory-layer {
-  z-index: 5;
+  z-index: 7;
   pointer-events: none;
 }
 
@@ -112,18 +112,19 @@ body {
 
 .armory-hitbox {
   position: absolute;
-  z-index: 3;
+  z-index: 12;
   display: block;
   padding: 0;
   border: 0;
+  appearance: none;
   background: transparent;
   cursor: zoom-in;
-  pointer-events: auto;
+  outline: none;
+  pointer-events: all;
 }
 
 .armory-hitbox:focus-visible {
-  outline: 1px solid rgba(143, 228, 255, 0.62);
-  outline-offset: 2px;
+  outline: none;
 }
 
 .is-armory-editing .armory-hitbox {

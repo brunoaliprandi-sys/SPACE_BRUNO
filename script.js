@@ -28,7 +28,7 @@ const ARMORY_ITEMS = [
     id: "pistola",
     title: "Pistola compatta",
     image: "armi/pistola.png",
-    description: "Arma laterale a profilo corto, custodita nel vano superiore per accesso rapido durante le procedure di emergenza.",
+    description: "Sidearm sigillata per corridoi pressurizzati: munizioni a punta frangibile, lampada strobo integrata e trattamento anti-corrosione per residui acidi xeno. Pensata come ultima linea quando la creatura e troppo vicina per usare il fucile.",
     alphaBox: { x: 294, y: 42, width: 700, height: 817 },
     frame: { x: 547.5, y: 249.5, width: 112.9, height: 112.9 },
   },
@@ -36,7 +36,7 @@ const ARMORY_ITEMS = [
     id: "coltello",
     title: "Coltello tattico",
     image: "armi/coltello.png",
-    description: "Lama multiuso con impugnatura isolata, pensata per taglio tecnico e interventi ravvicinati sulla strumentazione.",
+    description: "Lama monofilare ceramica con dorso isolato e scanalature di drenaggio. Serve per liberarsi da membrane, cablaggi, bozzoli e tessuti alieni senza condurre scariche o trattenere fluidi contaminanti.",
     alphaBox: { x: 528, y: 27, width: 198, height: 1197 },
     frame: { x: 584.2, y: 296.9, width: 99.5, height: 99.5 },
   },
@@ -44,7 +44,7 @@ const ARMORY_ITEMS = [
     id: "guanti",
     title: "Guanti tecnici",
     image: "armi/guanti_1.png",
-    description: "Guanti rinforzati per prese sicure su superfici fredde, pannelli metallici e moduli sotto tensione.",
+    description: "Guanti da contenimento con palmo magnetico, pelle esterna anti-acido e inserti termici. Consentono presa su scafi gelati, armi surriscaldate e superfici contaminate da secrezioni xenomorfe o plasma demoniaco.",
     alphaBox: { x: 296, y: 110, width: 638, height: 1024 },
     frame: { x: 536.6, y: 353.5, width: 116.0, height: 116.0 },
   },
@@ -52,7 +52,7 @@ const ARMORY_ITEMS = [
     id: "borsa",
     title: "Borsa operativa",
     image: "armi/borsa_1.png",
-    description: "Kit morbido da missione con tasche modulari, agganci rapidi e alloggiamenti per piccoli strumenti.",
+    description: "Borsa operativa da bonifica: slot per razzi luminosi, batterie UV, sensori di movimento, bende coagulanti e campioni sigillati. Configurata per missioni dove restare nella luce e leggere il movimento salva piu vite delle munizioni.",
     alphaBox: { x: 121, y: 268, width: 1013, height: 693 },
     frame: { x: 566.0, y: 568.0, width: 104.0, height: 104.0 },
   },
@@ -60,7 +60,7 @@ const ARMORY_ITEMS = [
     id: "granata-1",
     title: "Granata a impulso",
     image: "armi/granata_1.png",
-    description: "Dispositivo sferico da contenimento, marcato per impiego controllato nei compartimenti pressurizzati.",
+    description: "Granata a impulso direzionale tarata per stordire bersagli rapidi senza perforare lo scafo. L'onda elettromagnetica disturba sensori organici, cariche Argent instabili e predatori che cacciano nel buio.",
     alphaBox: { x: 309, y: 163, width: 643, height: 927 },
     frame: { x: 547.9, y: 514.7, width: 89.7, height: 89.7 },
   },
@@ -68,7 +68,7 @@ const ARMORY_ITEMS = [
     id: "flash-bang",
     title: "Flash bang",
     image: "armi/flash_bang.png",
-    description: "Modulo cilindrico non letale per saturazione luminosa e sonora, fissato nella rastrelliera inferiore.",
+    description: "Flash bang fotonica ad alta intensita, sviluppata per creature fotosensibili e branchi notturni. Il lampo satura visori, occhi modificati e tessuti vulnerabili alla luce; la detonazione sonora spezza l'assalto nei tunnel.",
     alphaBox: { x: 417, y: 176, width: 412, height: 903 },
     frame: { x: 583.6, y: 506.2, width: 105.5, height: 105.5 },
   },
@@ -76,7 +76,7 @@ const ARMORY_ITEMS = [
     id: "caricatore-1",
     title: "Caricatore standard",
     image: "armi/caricatore_1.png",
-    description: "Caricatore verticale di riserva, sigillato e pronto per le armi lunghe del rack destro.",
+    description: "Caricatore standard con munizioni perforanti a bassa frammentazione. Buono contro corazze chitinose e demoni minori, riduce rimbalzi e sovrapenetrazione nei moduli abitati della nave.",
     alphaBox: { x: 278, y: 226, width: 463, height: 1084 },
     frame: { x: 557.4, y: 647.9, width: 57.5, height: 86.3 },
   },
@@ -84,7 +84,7 @@ const ARMORY_ITEMS = [
     id: "caricatore-2",
     title: "Caricatore esteso",
     image: "armi/caricatore_2.png",
-    description: "Modulo munizioni esteso con corpo rinforzato, alloggiato nella sezione bassa della rastrelliera.",
+    description: "Caricatore esteso per fuoco di soppressione quando il tracciatore di movimento diventa una parete di segnali. Molle rinforzate, feed anti-inceppamento e munizioni alternate perforanti/incendiarie per tenere lontano lo sciame.",
     alphaBox: { x: 331, y: 148, width: 357, height: 1230 },
     frame: { x: 1043.0, y: 636.1, width: 68.3, height: 102.4 },
   },
@@ -92,7 +92,7 @@ const ARMORY_ITEMS = [
     id: "fucile-1",
     title: "Fucile d'assalto",
     image: "armi/fucile_1.png",
-    description: "Arma lunga principale con corpo compatto e slitta superiore, bloccata nel supporto sinistro del rack.",
+    description: "Fucile d'assalto compatto ispirato alle dottrine dei marine coloniali: raffica controllata, modulo luce sotto-canna, slitta per sensore di movimento e munizioni anti-carapace. Adatto a xenomorfi nei condotti e demoni corazzati a media distanza.",
     alphaBox: { x: 399, y: 41, width: 357, height: 1352 },
     frame: { x: 922.1, y: 251.3, width: 255.5, height: 340.7 },
   },
@@ -100,7 +100,7 @@ const ARMORY_ITEMS = [
     id: "granata-2",
     title: "Granata compatta",
     image: "armi/granata_2.png",
-    description: "Unità compatta da lancio, custodita accanto ai caricatori nella sezione bassa del rack armi.",
+    description: "Granata compatta a carica termobarica ridotta, progettata per stanze strette e nidi biologici. Brucia ossigeno locale, sterilizza spore e biomassa, ma limita l'onda d'urto per non compromettere paratie e supporti vitali.",
     alphaBox: { x: 299, y: 137, width: 622, height: 933 },
     frame: { x: 1044.6, y: 581.5, width: 78.0, height: 78.0 },
   },
@@ -142,6 +142,7 @@ let lastArmoryFocus = null;
 let lastHalFocus = null;
 let armoryPlacements = {};
 let armoryToastTimer = null;
+let suppressNextArmoryBackdropClick = false;
 
 const armoryEditorState = {
   active: false,
@@ -691,6 +692,18 @@ function buildArmoryHotspots() {
       event.preventDefault();
       event.stopPropagation();
       openArmoryItem(item, hitbox);
+      hitbox.blur();
+    });
+    hitbox.addEventListener("pointerdown", (event) => {
+      if (armoryEditorState.active) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      suppressNextArmoryBackdropClick = true;
+      openArmoryItem(item, hitbox);
+      hitbox.blur();
     });
 
     armoryHotspots.push({ item, element: silhouette, hitbox });
@@ -1455,6 +1468,11 @@ armoryModalClose?.addEventListener("click", () => {
 });
 
 armoryModal?.querySelector(".armory-modal__scrim")?.addEventListener("click", () => {
+  if (suppressNextArmoryBackdropClick) {
+    suppressNextArmoryBackdropClick = false;
+    return;
+  }
+
   closeArmoryItem();
 });
 
