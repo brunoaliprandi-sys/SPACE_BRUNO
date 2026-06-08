@@ -16,6 +16,13 @@
       <div class="scene__vignette" aria-hidden="true"></div>
       <div class="scene__atmosphere" aria-hidden="true"></div>
 
+      <header class="scene-header" aria-label="Intestazione monitor stasi">
+        <div class="hud-footer__core scene-header__core">
+          <span class="hud-footer__core-label">BRUNO / STASIS</span>
+          <span class="hud-footer__core-status">IDLE LOOP / MONITOR</span>
+        </div>
+      </header>
+
       <section class="stasis-bay" id="stasis-bay" aria-label="Cella criogenica di Bruno">
         <div class="stasis-bay__core">
           <div class="stasis-bay__glow" aria-hidden="true"></div>
@@ -30,6 +37,78 @@
           <div class="stasis-bay__mist" aria-hidden="true"></div>
           <div class="stasis-bay__scan" aria-hidden="true"></div>
           <div class="stasis-bay__glass" aria-hidden="true"></div>
+          <div class="stasis-bay__controls" aria-label="Comandi integrati della cella criogenica">
+            <button
+              class="hud-trigger hud-trigger--health hud-trigger--embedded"
+              type="button"
+              data-panel-target="panel-health"
+              aria-controls="panel-health"
+              aria-expanded="false"
+              aria-label="Apri stato di salute attuale"
+            >
+              <img
+                class="hud-trigger__icon-image hud-trigger__icon-image--health"
+                src="assets/icons/heart-beats.svg"
+                alt=""
+                aria-hidden="true"
+                decoding="async"
+              >
+              <span class="hud-trigger__label">Salute</span>
+            </button>
+
+            <button
+              class="hud-trigger hud-trigger--robot hud-trigger--embedded"
+              id="robot-toggle"
+              type="button"
+              aria-pressed="false"
+              aria-label="Attiva o nascondi robot pulizie"
+            >
+              <img
+                class="hud-trigger__icon-image hud-trigger__icon-image--robot"
+                src="assets/icons/vacuum-cleaner.svg"
+                alt=""
+                aria-hidden="true"
+                decoding="async"
+              >
+              <span class="hud-trigger__label">Robot</span>
+              <span class="hud-trigger__hint">EVOCA ROBOT</span>
+            </button>
+
+            <button
+              class="hud-trigger hud-trigger--cryo hud-trigger--embedded"
+              type="button"
+              data-panel-target="panel-cryo"
+              aria-controls="panel-cryo"
+              aria-expanded="false"
+              aria-label="Apri stato della cella criogenica"
+            >
+              <img
+                class="hud-trigger__icon-image hud-trigger__icon-image--cryo"
+                src="assets/icons/frozen-orb.svg"
+                alt=""
+                aria-hidden="true"
+                decoding="async"
+              >
+              <span class="hud-trigger__label">Cryo</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section
+        class="robot-bay"
+        id="robot-bay"
+        aria-hidden="true"
+      >
+        <div class="robot-cleaner" id="robot-cleaner">
+          <div class="robot-cleaner__shadow" aria-hidden="true"></div>
+          <img
+            id="robot-frame"
+            class="robot-cleaner__sprite"
+            src="animazioni/Robot_pulizie/Pulisce_fermo/frame_0000.png"
+            alt="Robot pulizie in pattugliamento sotto la cella criogenica"
+            decoding="async"
+          >
         </div>
       </section>
 
@@ -102,34 +181,9 @@
           </div>
         </section>
 
-        <div class="hud-footer__dock">
-          <button
-            class="hud-trigger hud-trigger--health"
-            type="button"
-            data-panel-target="panel-health"
-            aria-controls="panel-health"
-            aria-expanded="false"
-          >
-            <span class="hud-trigger__channel">CH-01</span>
-            <span class="hud-trigger__label">Stato di Salute Attuale</span>
-          </button>
-
-          <div class="hud-footer__core">
-            <span class="hud-footer__core-label">BRUNO / STASIS</span>
-            <span class="hud-footer__core-status">IDLE LOOP / MONITOR</span>
-          </div>
-
-          <button
-            class="hud-trigger hud-trigger--cryo"
-            type="button"
-            data-panel-target="panel-cryo"
-            aria-controls="panel-cryo"
-            aria-expanded="false"
-          >
-            <span class="hud-trigger__channel">CH-02</span>
-            <span class="hud-trigger__label">Stato Della Cella Criogenica</span>
-          </button>
-        </div>
+        <small class="hud-credit">
+          Icons: Delapouite, Lorc / <a href="https://game-icons.net" target="_blank" rel="noreferrer">game-icons.net</a> / CC BY 3.0
+        </small>
       </footer>
     </main>
 
