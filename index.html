@@ -49,7 +49,7 @@
 
       <header class="scene-header" aria-label="Intestazione monitor stasi">
         <div class="hud-footer__core scene-header__core">
-          <span class="hud-footer__core-label">BRUNO / STASIS</span>
+          <span class="hud-footer__core-label" id="room-label">BRUNO / STASIS</span>
           <span class="hud-footer__core-status">IDLE LOOP / MONITOR</span>
           <button
             class="scene-header__audio"
@@ -62,6 +62,24 @@
           </button>
         </div>
       </header>
+
+      <button
+        class="room-nav room-nav--prev"
+        id="room-prev"
+        type="button"
+        aria-label="Vai alla stanza di Bruno"
+      >
+        <span aria-hidden="true">&lsaquo;</span>
+      </button>
+
+      <button
+        class="room-nav room-nav--next"
+        id="room-next"
+        type="button"
+        aria-label="Vai alla stanza di Donatella"
+      >
+        <span aria-hidden="true">&rsaquo;</span>
+      </button>
 
       <section class="stasis-bay" id="stasis-bay" aria-label="Cella criogenica di Bruno">
         <div class="stasis-bay__core">

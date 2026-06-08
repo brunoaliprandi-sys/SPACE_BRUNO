@@ -15,8 +15,23 @@ const ROBOT_FLOOR_BAND = {
   bottom: 930,
 };
 
-const BRUNO_FRAME_COUNT = 37;
-const BRUNO_FRAME_RATE = 12;
+const CHARACTER_FRAME_RATE = 12;
+const CHARACTER_PROFILES = {
+  bruno: {
+    name: "Bruno",
+    roomLabel: "BRUNO / STASIS",
+    frameBasePath: "animazioni/Bruno/IDLE_stasi_criogenica",
+    frameCount: 37,
+    alt: "Bruno in animazione idle all'interno della cella criogenica",
+  },
+  donatella: {
+    name: "Donatella",
+    roomLabel: "DONATELLA / STASIS",
+    frameBasePath: "animazioni/Donatella/IDLE_stasi_criogenica",
+    frameCount: 36,
+    alt: "Donatella in animazione idle all'interno della cella criogenica",
+  },
+};
 const ROBOT_FRAME_COUNT = 36;
 const ROBOT_BASE_WIDTH = 390;
 const ROBOT_IDLE_MODES = ["move", "clean"];
@@ -109,6 +124,9 @@ const ARMORY_ITEMS = [
 const hudFooter = document.querySelector(".hud-footer");
 const stasisBay = document.getElementById("stasis-bay");
 const brunoFrame = document.getElementById("bruno-frame");
+const roomLabel = document.getElementById("room-label");
+const roomPrev = document.getElementById("room-prev");
+const roomNext = document.getElementById("room-next");
 const hudTriggers = document.querySelectorAll(".hud-trigger");
 const armoryLayer = document.getElementById("armory-layer");
 const armoryModal = document.getElementById("armory-modal");
@@ -128,6 +146,14 @@ const armoryEditorSave = document.getElementById("armory-editor-save");
 const armoryEditorReset = document.getElementById("armory-editor-reset");
 const armoryEditorExit = document.getElementById("armory-editor-exit");
 const armoryToast = document.getElementById("armory-toast");
+const ARMORY_INTERACTION_EXCLUSIONS = [
+  ".scene-header",
+  ".hud-footer",
+  ".stasis-bay__controls",
+  ".hal-trigger",
+  ".armory-editor",
+  ".room-nav",
+].join(", ");
 const robotBay = document.getElementById("robot-bay");
 const robotCleaner = document.getElementById("robot-cleaner");
 const robotFrame = document.getElementById("robot-frame");
@@ -178,16 +204,22 @@ function preloadFrames(frameSources) {
   }
 }
 
-const brunoForwardFrames = buildFrames(
-  "animazioni/Bruno/IDLE_stasi_criogenica",
-  BRUNO_FRAME_COUNT,
-);
+const characterAnimations = Object.fromEntries(
+  Object.entries(CHARACTER_PROFILES).map(([key, profile]) => {
+    const forwardFrames = buildFrames(profile.frameBasePath, profile.frameCount);
 
-// Build a ping-pong loop so the animation reverses smoothly instead of snapping.
-const brunoFrames = [
-  ...brunoForwardFrames,
-  ...brunoForwardFrames.slice(1, -1).reverse(),
-];
+    return [
+      key,
+      {
+        forwardFrames,
+        frames: [
+          ...forwardFrames,
+          ...forwardFrames.slice(1, -1).reverse(),
+        ],
+      },
+    ];
+  }),
+);
 
 const robotAnimations = {
   move: {
@@ -204,7 +236,7 @@ const robotAnimations = {
   },
 };
 
-preloadFrames(brunoForwardFrames);
+preloadFrames(Object.values(characterAnimations).flatMap((animation) => animation.forwardFrames));
 preloadFrames([
   ...robotAnimations.move.frames,
   ...robotAnimations.clean.frames,
@@ -909,7 +941,7 @@ function handleArmoryPointerDown(event) {
     event.button !== 0
     || armoryModal?.classList.contains("is-open")
     || halLogin?.classList.contains("is-open")
-    || event.target.closest(".scene-header, .hud-footer, .stasis-bay__controls, .hal-trigger, .armory-editor")
+    || event.target.closest(ARMORY_INTERACTION_EXCLUSIONS)
   ) {
     return;
   }
@@ -963,7 +995,7 @@ function handleArmoryPointerMove(event) {
       armoryEditorState.active
       || armoryModal?.classList.contains("is-open")
       || halLogin?.classList.contains("is-open")
-      || event.target.closest?.(".scene-header, .hud-footer, .stasis-bay__controls, .hal-trigger, .armory-editor")
+      || event.target.closest?.(ARMORY_INTERACTION_EXCLUSIONS)
     ) {
       setArmoryHoverItem(null);
       return;
@@ -990,7 +1022,7 @@ function handleArmoryClick(event) {
     armoryEditorState.active
     || armoryModal?.classList.contains("is-open")
     || halLogin?.classList.contains("is-open")
-    || event.target.closest?.(".scene-header, .hud-footer, .stasis-bay__controls, .hal-trigger, .armory-editor")
+    || event.target.closest?.(ARMORY_INTERACTION_EXCLUSIONS)
   ) {
     return;
   }
@@ -1200,22 +1232,57 @@ function layoutRobotBay() {
   applyRobotTransform();
 }
 
-let brunoFrameIndex = 0;
-let brunoLastFrameTime = 0;
+let activeRoom = "bruno";
+let characterFrameIndex = 0;
+let characterLastFrameTime = 0;
 
-function animateBruno(timestamp) {
-  if (!brunoLastFrameTime) {
-    brunoLastFrameTime = timestamp;
+function updateRoomNavigation() {
+  const activeProfile = CHARACTER_PROFILES[activeRoom];
+
+  if (roomLabel) {
+    roomLabel.textContent = activeProfile.roomLabel;
   }
 
-  const frameDuration = 1000 / BRUNO_FRAME_RATE;
-  if (timestamp - brunoLastFrameTime >= frameDuration) {
-    brunoFrameIndex = (brunoFrameIndex + 1) % brunoFrames.length;
-    brunoFrame.src = brunoFrames[brunoFrameIndex];
-    brunoLastFrameTime = timestamp;
+  if (stasisBay) {
+    stasisBay.setAttribute("aria-label", `Cella criogenica di ${activeProfile.name}`);
   }
 
-  window.requestAnimationFrame(animateBruno);
+  if (brunoFrame) {
+    brunoFrame.alt = activeProfile.alt;
+    brunoFrame.src = characterAnimations[activeRoom].frames[characterFrameIndex]
+      ?? characterAnimations[activeRoom].frames[0];
+  }
+
+  roomPrev?.classList.toggle("is-visible", activeRoom === "donatella");
+  roomNext?.classList.toggle("is-visible", activeRoom === "bruno");
+}
+
+function setActiveRoom(nextRoom) {
+  if (!CHARACTER_PROFILES[nextRoom] || activeRoom === nextRoom) {
+    return;
+  }
+
+  activeRoom = nextRoom;
+  characterFrameIndex = 0;
+  characterLastFrameTime = 0;
+  updateRoomNavigation();
+  playOneShot(audioTracks.uiClick, 0.12);
+}
+
+function animateCharacter(timestamp) {
+  if (!characterLastFrameTime) {
+    characterLastFrameTime = timestamp;
+  }
+
+  const frames = characterAnimations[activeRoom].frames;
+  const frameDuration = 1000 / CHARACTER_FRAME_RATE;
+  if (timestamp - characterLastFrameTime >= frameDuration) {
+    characterFrameIndex = (characterFrameIndex + 1) % frames.length;
+    brunoFrame.src = frames[characterFrameIndex];
+    characterLastFrameTime = timestamp;
+  }
+
+  window.requestAnimationFrame(animateCharacter);
 }
 
 function setRobotMode(mode) {
@@ -1448,6 +1515,14 @@ audioToggle?.addEventListener("click", () => {
   toggleSceneAudio();
 });
 
+roomNext?.addEventListener("click", () => {
+  setActiveRoom("donatella");
+});
+
+roomPrev?.addEventListener("click", () => {
+  setActiveRoom("bruno");
+});
+
 halTrigger?.addEventListener("click", () => {
   playOneShot(audioTracks.uiClick, 0.14);
   openHalLogin();
@@ -1557,6 +1632,7 @@ layoutHud();
 setupHudTelemetry();
 refreshHudTelemetry();
 updateAudioToggle();
+updateRoomNavigation();
 window.setInterval(refreshHudTelemetry, 1100);
 window.addEventListener("resize", () => {
   layoutArmoryHotspots();
@@ -1564,5 +1640,5 @@ window.addEventListener("resize", () => {
   layoutRobotBay();
   layoutHud();
 });
-window.requestAnimationFrame(animateBruno);
+window.requestAnimationFrame(animateCharacter);
 window.requestAnimationFrame(animateRobot);
