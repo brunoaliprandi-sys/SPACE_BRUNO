@@ -20,11 +20,114 @@ const BRUNO_FRAME_RATE = 12;
 const ROBOT_FRAME_COUNT = 36;
 const ROBOT_BASE_WIDTH = 390;
 const ROBOT_IDLE_MODES = ["move", "clean"];
+const ARMORY_STORAGE_KEY = "space-bruno-armory-placements-v1";
+const ARMORY_PASSWORD = "2001";
+const ARMORY_ALPHA_THRESHOLD = 24;
+const ARMORY_ITEMS = [
+  {
+    id: "pistola",
+    title: "Pistola compatta",
+    image: "armi/pistola.png",
+    description: "Arma laterale a profilo corto, custodita nel vano superiore per accesso rapido durante le procedure di emergenza.",
+    alphaBox: { x: 294, y: 42, width: 700, height: 817 },
+    frame: { x: 547.5, y: 249.5, width: 112.9, height: 112.9 },
+  },
+  {
+    id: "coltello",
+    title: "Coltello tattico",
+    image: "armi/coltello.png",
+    description: "Lama multiuso con impugnatura isolata, pensata per taglio tecnico e interventi ravvicinati sulla strumentazione.",
+    alphaBox: { x: 528, y: 27, width: 198, height: 1197 },
+    frame: { x: 584.2, y: 296.9, width: 99.5, height: 99.5 },
+  },
+  {
+    id: "guanti",
+    title: "Guanti tecnici",
+    image: "armi/guanti_1.png",
+    description: "Guanti rinforzati per prese sicure su superfici fredde, pannelli metallici e moduli sotto tensione.",
+    alphaBox: { x: 296, y: 110, width: 638, height: 1024 },
+    frame: { x: 536.6, y: 353.5, width: 116.0, height: 116.0 },
+  },
+  {
+    id: "borsa",
+    title: "Borsa operativa",
+    image: "armi/borsa_1.png",
+    description: "Kit morbido da missione con tasche modulari, agganci rapidi e alloggiamenti per piccoli strumenti.",
+    alphaBox: { x: 121, y: 268, width: 1013, height: 693 },
+    frame: { x: 566.0, y: 568.0, width: 104.0, height: 104.0 },
+  },
+  {
+    id: "granata-1",
+    title: "Granata a impulso",
+    image: "armi/granata_1.png",
+    description: "Dispositivo sferico da contenimento, marcato per impiego controllato nei compartimenti pressurizzati.",
+    alphaBox: { x: 309, y: 163, width: 643, height: 927 },
+    frame: { x: 547.9, y: 514.7, width: 89.7, height: 89.7 },
+  },
+  {
+    id: "flash-bang",
+    title: "Flash bang",
+    image: "armi/flash_bang.png",
+    description: "Modulo cilindrico non letale per saturazione luminosa e sonora, fissato nella rastrelliera inferiore.",
+    alphaBox: { x: 417, y: 176, width: 412, height: 903 },
+    frame: { x: 583.6, y: 506.2, width: 105.5, height: 105.5 },
+  },
+  {
+    id: "caricatore-1",
+    title: "Caricatore standard",
+    image: "armi/caricatore_1.png",
+    description: "Caricatore verticale di riserva, sigillato e pronto per le armi lunghe del rack destro.",
+    alphaBox: { x: 278, y: 226, width: 463, height: 1084 },
+    frame: { x: 557.4, y: 647.9, width: 57.5, height: 86.3 },
+  },
+  {
+    id: "caricatore-2",
+    title: "Caricatore esteso",
+    image: "armi/caricatore_2.png",
+    description: "Modulo munizioni esteso con corpo rinforzato, alloggiato nella sezione bassa della rastrelliera.",
+    alphaBox: { x: 331, y: 148, width: 357, height: 1230 },
+    frame: { x: 1043.0, y: 636.1, width: 68.3, height: 102.4 },
+  },
+  {
+    id: "fucile-1",
+    title: "Fucile d'assalto",
+    image: "armi/fucile_1.png",
+    description: "Arma lunga principale con corpo compatto e slitta superiore, bloccata nel supporto sinistro del rack.",
+    alphaBox: { x: 399, y: 41, width: 357, height: 1352 },
+    frame: { x: 922.1, y: 251.3, width: 255.5, height: 340.7 },
+  },
+  {
+    id: "granata-2",
+    title: "Granata compatta",
+    image: "armi/granata_2.png",
+    description: "Unità compatta da lancio, custodita accanto ai caricatori nella sezione bassa del rack armi.",
+    alphaBox: { x: 299, y: 137, width: 622, height: 933 },
+    frame: { x: 1044.6, y: 581.5, width: 78.0, height: 78.0 },
+  },
+];
 
 const hudFooter = document.querySelector(".hud-footer");
 const stasisBay = document.getElementById("stasis-bay");
 const brunoFrame = document.getElementById("bruno-frame");
 const hudTriggers = document.querySelectorAll(".hud-trigger");
+const armoryLayer = document.getElementById("armory-layer");
+const armoryModal = document.getElementById("armory-modal");
+const armoryModalImage = document.getElementById("armory-modal-image");
+const armoryModalTitle = document.getElementById("armory-modal-title");
+const armoryModalDescription = document.getElementById("armory-modal-description");
+const armoryModalClose = document.getElementById("armory-modal-close");
+const halTrigger = document.getElementById("hal-trigger");
+const halLogin = document.getElementById("hal-login");
+const halLoginForm = document.getElementById("hal-login-form");
+const halPassword = document.getElementById("hal-password");
+const halLoginError = document.getElementById("hal-login-error");
+const halLoginCancel = document.getElementById("hal-login-cancel");
+const armoryEditor = document.getElementById("armory-editor");
+const armoryEditorItem = document.getElementById("armory-editor-item");
+const armoryEditorSave = document.getElementById("armory-editor-save");
+const armoryEditorReset = document.getElementById("armory-editor-reset");
+const armoryEditorExit = document.getElementById("armory-editor-exit");
+const armoryToast = document.getElementById("armory-toast");
 const robotBay = document.getElementById("robot-bay");
 const robotCleaner = document.getElementById("robot-cleaner");
 const robotFrame = document.getElementById("robot-frame");
@@ -32,6 +135,32 @@ const robotToggle = document.getElementById("robot-toggle");
 const robotToggleHint = robotToggle?.querySelector(".hud-trigger__hint");
 const audioToggle = document.getElementById("audio-toggle");
 const hudTelemetryMetrics = [];
+const armoryHotspots = [];
+const armoryImageMasks = new Map();
+let armoryHoverPreview = null;
+let lastArmoryFocus = null;
+let lastHalFocus = null;
+let armoryPlacements = {};
+let armoryToastTimer = null;
+
+const armoryEditorState = {
+  active: false,
+  hoveredItemId: null,
+  selectedItemId: null,
+  draggingItemId: null,
+  dragOffsetX: 0,
+  dragOffsetY: 0,
+};
+
+if (armoryModal) {
+  armoryModal.inert = true;
+  armoryModal.setAttribute("inert", "");
+}
+
+if (halLogin) {
+  halLogin.inert = true;
+  halLogin.setAttribute("inert", "");
+}
 
 function buildFrames(basePath, frameCount) {
   return Array.from({ length: frameCount }, (_, index) => {
@@ -79,6 +208,7 @@ preloadFrames([
   ...robotAnimations.move.frames,
   ...robotAnimations.clean.frames,
 ]);
+preloadFrames(ARMORY_ITEMS.map((item) => item.image));
 
 const robotState = {
   visible: false,
@@ -105,7 +235,7 @@ function createAudioTrack(src, options = {}) {
 const audioTracks = {
   ambience: createAudioTrack("assets/audio/ambience-spaceship.ogg", {
     loop: true,
-    volume: 0.16,
+    volume: 0.32,
   }),
   robotLoop: createAudioTrack("assets/audio/robot-loop.ogg", {
     loop: true,
@@ -408,6 +538,597 @@ function getBackdropMetrics() {
     renderedHeight,
     scale,
   };
+}
+
+function clonePlacement(placement) {
+  return {
+    x: placement.x,
+    y: placement.y,
+    width: placement.width,
+    height: placement.height,
+  };
+}
+
+function getDefaultArmoryPlacements() {
+  return Object.fromEntries(
+    ARMORY_ITEMS.map((item) => [item.id, clonePlacement(item.frame)]),
+  );
+}
+
+function loadArmoryPlacements() {
+  const defaults = getDefaultArmoryPlacements();
+
+  try {
+    const saved = JSON.parse(localStorage.getItem(ARMORY_STORAGE_KEY) || "{}");
+
+    for (const item of ARMORY_ITEMS) {
+      const placement = saved[item.id];
+
+      if (
+        placement
+        && Number.isFinite(placement.x)
+        && Number.isFinite(placement.y)
+        && Number.isFinite(placement.width)
+        && Number.isFinite(placement.height)
+        && placement.width > 0
+        && placement.height > 0
+      ) {
+        defaults[item.id] = clonePlacement(placement);
+      }
+    }
+  } catch {
+    try {
+      localStorage.removeItem(ARMORY_STORAGE_KEY);
+    } catch {}
+  }
+
+  armoryPlacements = defaults;
+}
+
+function saveArmoryPlacements() {
+  try {
+    localStorage.setItem(ARMORY_STORAGE_KEY, JSON.stringify(armoryPlacements));
+  } catch {}
+}
+
+function showArmoryToast(message) {
+  if (!armoryToast) {
+    return;
+  }
+
+  window.clearTimeout(armoryToastTimer);
+  armoryToast.textContent = message;
+  armoryToast.classList.add("is-visible");
+  armoryToast.setAttribute("aria-hidden", "false");
+
+  armoryToastTimer = window.setTimeout(() => {
+    armoryToast.classList.remove("is-visible");
+    armoryToast.setAttribute("aria-hidden", "true");
+  }, 1800);
+}
+
+function resetArmoryPlacements() {
+  armoryPlacements = getDefaultArmoryPlacements();
+  try {
+    localStorage.removeItem(ARMORY_STORAGE_KEY);
+  } catch {}
+  layoutArmoryHotspots();
+  updateArmoryEditorStatus();
+}
+
+function buildArmoryImageMask(item) {
+  const image = new Image();
+  image.decoding = "async";
+  const createMask = () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+
+    if (!canvas.width || !canvas.height) {
+      return;
+    }
+
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    context.drawImage(image, 0, 0);
+
+    armoryImageMasks.set(item.id, {
+      image,
+      context,
+      width: canvas.width,
+      height: canvas.height,
+    });
+  };
+
+  image.addEventListener("load", createMask, { once: true });
+  image.src = item.image;
+
+  if (image.complete) {
+    createMask();
+  }
+}
+
+function buildArmoryHotspots() {
+  if (!armoryLayer) {
+    return;
+  }
+
+  loadArmoryPlacements();
+
+  const fragment = document.createDocumentFragment();
+
+  for (const item of ARMORY_ITEMS) {
+    buildArmoryImageMask(item);
+
+    const silhouette = document.createElement("img");
+    silhouette.className = "armory-silhouette";
+    silhouette.src = item.image;
+    silhouette.alt = "";
+    silhouette.decoding = "async";
+    silhouette.draggable = false;
+    silhouette.dataset.armoryItem = item.id;
+    silhouette.setAttribute("aria-hidden", "true");
+
+    const hitbox = document.createElement("button");
+    hitbox.className = "armory-hitbox";
+    hitbox.type = "button";
+    hitbox.dataset.armoryItem = item.id;
+    hitbox.setAttribute("aria-label", `Ispeziona ${item.title}`);
+    hitbox.addEventListener("mouseenter", () => {
+      if (!armoryEditorState.active) {
+        setArmoryHoverItem(item);
+      }
+    });
+    hitbox.addEventListener("mouseleave", () => {
+      if (!armoryEditorState.active) {
+        setArmoryHoverItem(null);
+      }
+    });
+    hitbox.addEventListener("click", (event) => {
+      if (armoryEditorState.active) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      openArmoryItem(item, hitbox);
+    });
+
+    armoryHotspots.push({ item, element: silhouette, hitbox });
+    fragment.append(silhouette);
+    fragment.append(hitbox);
+  }
+
+  armoryLayer.append(fragment);
+  armoryHoverPreview = document.createElement("img");
+  armoryHoverPreview.className = "armory-hover-preview";
+  armoryHoverPreview.alt = "";
+  armoryHoverPreview.decoding = "async";
+  armoryHoverPreview.setAttribute("aria-hidden", "true");
+  armoryLayer.append(armoryHoverPreview);
+  layoutArmoryHotspots();
+}
+
+function layoutArmoryHotspots() {
+  if (!armoryHotspots.length) {
+    return;
+  }
+
+  const { offsetX, offsetY, scale } = getBackdropMetrics();
+
+  for (const { item, element, hitbox } of armoryHotspots) {
+    const placement = armoryPlacements[item.id] ?? item.frame;
+    const left = `${offsetX + placement.x * scale}px`;
+    const top = `${offsetY + placement.y * scale}px`;
+    const width = `${placement.width * scale}px`;
+    const height = `${placement.height * scale}px`;
+
+    element.style.left = left;
+    element.style.top = top;
+    element.style.width = width;
+    element.style.height = height;
+    hitbox.style.left = left;
+    hitbox.style.top = top;
+    hitbox.style.width = width;
+    hitbox.style.height = height;
+    element.classList.toggle("is-selected", armoryEditorState.selectedItemId === item.id);
+    const isNormalHovered = !armoryEditorState.active && armoryEditorState.hoveredItemId === item.id;
+    element.classList.toggle("is-hovered", isNormalHovered);
+
+    if (isNormalHovered) {
+      element.style.setProperty("opacity", "0.84", "important");
+      element.style.setProperty("visibility", "visible");
+      element.style.setProperty(
+        "filter",
+        "drop-shadow(0 0 16px rgba(255, 90, 102, 0.54)) drop-shadow(0 0 8px rgba(143, 228, 255, 0.36)) sepia(1) saturate(2) hue-rotate(136deg)",
+      );
+    } else {
+      element.style.removeProperty("opacity");
+      element.style.removeProperty("visibility");
+      element.style.removeProperty("filter");
+    }
+  }
+
+  if (!armoryHoverPreview) {
+    return;
+  }
+
+  const hoveredItem = !armoryEditorState.active
+    ? getItemFromId(armoryEditorState.hoveredItemId)
+    : null;
+
+  if (!hoveredItem) {
+    armoryHoverPreview.classList.remove("is-visible");
+    armoryHoverPreview.style.removeProperty("display");
+    armoryHoverPreview.style.removeProperty("visibility");
+    return;
+  }
+
+  const placement = armoryPlacements[hoveredItem.id] ?? hoveredItem.frame;
+  armoryHoverPreview.src = hoveredItem.image;
+  armoryHoverPreview.style.left = `${offsetX + placement.x * scale}px`;
+  armoryHoverPreview.style.top = `${offsetY + placement.y * scale}px`;
+  armoryHoverPreview.style.width = `${placement.width * scale}px`;
+  armoryHoverPreview.style.height = `${placement.height * scale}px`;
+  armoryHoverPreview.style.setProperty("display", "block");
+  armoryHoverPreview.style.setProperty("visibility", "visible");
+  armoryHoverPreview.classList.add("is-visible");
+}
+
+function getBackdropPoint(clientX, clientY) {
+  const { offsetX, offsetY, scale } = getBackdropMetrics();
+
+  return {
+    x: (clientX - offsetX) / scale,
+    y: (clientY - offsetY) / scale,
+  };
+}
+
+function getItemFromId(itemId) {
+  return ARMORY_ITEMS.find((item) => item.id === itemId);
+}
+
+function isPointInArmoryItem(item, point) {
+  const placement = armoryPlacements[item.id] ?? item.frame;
+
+  if (
+    point.x < placement.x
+    || point.y < placement.y
+    || point.x > placement.x + placement.width
+    || point.y > placement.y + placement.height
+  ) {
+    return false;
+  }
+
+  const mask = armoryImageMasks.get(item.id);
+
+  if (!mask) {
+    return false;
+  }
+
+  const sourceX = Math.floor(((point.x - placement.x) / placement.width) * mask.width);
+  const sourceY = Math.floor(((point.y - placement.y) / placement.height) * mask.height);
+
+  if (sourceX < 0 || sourceY < 0 || sourceX >= mask.width || sourceY >= mask.height) {
+    return false;
+  }
+
+  return mask.context.getImageData(sourceX, sourceY, 1, 1).data[3] > ARMORY_ALPHA_THRESHOLD;
+}
+
+function findArmoryItemAtPoint(point) {
+  for (let index = ARMORY_ITEMS.length - 1; index >= 0; index -= 1) {
+    const item = ARMORY_ITEMS[index];
+
+    if (isPointInArmoryItem(item, point)) {
+      return item;
+    }
+  }
+
+  return null;
+}
+
+function updateArmoryEditorStatus() {
+  if (!armoryEditor || !armoryEditorItem) {
+    return;
+  }
+
+  armoryEditor.setAttribute("aria-hidden", String(!armoryEditorState.active));
+  const selectedItem = getItemFromId(armoryEditorState.selectedItemId);
+  armoryEditorItem.textContent = selectedItem ? selectedItem.title : "NESSUNA SAGOMA";
+  document.body.classList.toggle("is-armory-editing", armoryEditorState.active);
+  layoutArmoryHotspots();
+}
+
+function selectArmoryEditorItem(item) {
+  armoryEditorState.selectedItemId = item?.id ?? null;
+  updateArmoryEditorStatus();
+}
+
+function setArmoryHoverItem(item) {
+  const nextItemId = item?.id ?? null;
+
+  if (armoryEditorState.hoveredItemId === nextItemId) {
+    return;
+  }
+
+  armoryEditorState.hoveredItemId = nextItemId;
+  document.body.classList.toggle("is-armory-hovering", Boolean(nextItemId));
+  layoutArmoryHotspots();
+}
+
+function scaleSelectedArmoryItem(factor) {
+  const item = getItemFromId(armoryEditorState.selectedItemId);
+
+  if (!item) {
+    return;
+  }
+
+  const placement = armoryPlacements[item.id];
+  const centerX = placement.x + placement.width / 2;
+  const centerY = placement.y + placement.height / 2;
+  const nextWidth = clampValue(placement.width * factor, 18, BACKDROP_SIZE.width * 0.42);
+  const nextHeight = clampValue(placement.height * factor, 18, BACKDROP_SIZE.height * 0.72);
+
+  armoryPlacements[item.id] = {
+    x: centerX - nextWidth / 2,
+    y: centerY - nextHeight / 2,
+    width: nextWidth,
+    height: nextHeight,
+  };
+  layoutArmoryHotspots();
+}
+
+function enterArmoryEditor() {
+  armoryEditorState.active = true;
+  setArmoryHoverItem(null);
+  closeHalLogin({ restoreFocus: false });
+  updateArmoryEditorStatus();
+}
+
+function exitArmoryEditor() {
+  armoryEditorState.active = false;
+  armoryEditorState.draggingItemId = null;
+  selectArmoryEditorItem(null);
+}
+
+function handleArmoryPointerDown(event) {
+  if (
+    event.button !== 0
+    || armoryModal?.classList.contains("is-open")
+    || halLogin?.classList.contains("is-open")
+    || event.target.closest(".scene-header, .hud-footer, .stasis-bay__controls, .hal-trigger, .armory-editor")
+  ) {
+    return;
+  }
+
+  const directSilhouette = event.target.closest?.(".armory-silhouette");
+  const directItem = armoryEditorState.active && directSilhouette
+    ? getItemFromId(directSilhouette.dataset.armoryItem)
+    : null;
+  const point = getBackdropPoint(event.clientX, event.clientY);
+  const hoveredItem = !armoryEditorState.active
+    ? getItemFromId(armoryEditorState.hoveredItemId)
+    : null;
+  const item = directItem ?? hoveredItem ?? findArmoryItemAtPoint(point);
+
+  if (!item) {
+    return;
+  }
+
+  if (!armoryEditorState.active) {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  const placement = armoryPlacements[item.id];
+  armoryEditorState.draggingItemId = item.id;
+  armoryEditorState.dragOffsetX = point.x - placement.x;
+  armoryEditorState.dragOffsetY = point.y - placement.y;
+  selectArmoryEditorItem(item);
+
+  if (typeof directSilhouette?.setPointerCapture === "function") {
+    directSilhouette.setPointerCapture(event.pointerId);
+  }
+}
+
+function handleArmoryPointerMove(event) {
+  const item = getItemFromId(armoryEditorState.draggingItemId);
+
+  if (!item) {
+    const directHitbox = !armoryEditorState.active
+      ? event.target.closest?.(".armory-hitbox")
+      : null;
+
+    if (directHitbox) {
+      setArmoryHoverItem(getItemFromId(directHitbox.dataset.armoryItem));
+      return;
+    }
+
+    if (
+      armoryEditorState.active
+      || armoryModal?.classList.contains("is-open")
+      || halLogin?.classList.contains("is-open")
+      || event.target.closest?.(".scene-header, .hud-footer, .stasis-bay__controls, .hal-trigger, .armory-editor")
+    ) {
+      setArmoryHoverItem(null);
+      return;
+    }
+
+    setArmoryHoverItem(findArmoryItemAtPoint(getBackdropPoint(event.clientX, event.clientY)));
+    return;
+  }
+
+  const point = getBackdropPoint(event.clientX, event.clientY);
+  const placement = armoryPlacements[item.id];
+
+  placement.x = point.x - armoryEditorState.dragOffsetX;
+  placement.y = point.y - armoryEditorState.dragOffsetY;
+  layoutArmoryHotspots();
+}
+
+function handleArmoryPointerUp() {
+  armoryEditorState.draggingItemId = null;
+}
+
+function handleArmoryClick(event) {
+  if (
+    armoryEditorState.active
+    || armoryModal?.classList.contains("is-open")
+    || halLogin?.classList.contains("is-open")
+    || event.target.closest?.(".scene-header, .hud-footer, .stasis-bay__controls, .hal-trigger, .armory-editor")
+  ) {
+    return;
+  }
+
+  const point = getBackdropPoint(event.clientX, event.clientY);
+  const item = getItemFromId(armoryEditorState.hoveredItemId) ?? findArmoryItemAtPoint(point);
+
+  if (!item) {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+  openArmoryItem(item, armoryLayer);
+}
+
+function nudgeSelectedArmoryItem(key, multiplier) {
+  const item = getItemFromId(armoryEditorState.selectedItemId);
+
+  if (!armoryEditorState.active || !item) {
+    return false;
+  }
+
+  const placement = armoryPlacements[item.id];
+  const amount = multiplier;
+
+  if (key === "ArrowLeft") {
+    placement.x -= amount;
+  } else if (key === "ArrowRight") {
+    placement.x += amount;
+  } else if (key === "ArrowUp") {
+    placement.y -= amount;
+  } else if (key === "ArrowDown") {
+    placement.y += amount;
+  } else {
+    return false;
+  }
+
+  layoutArmoryHotspots();
+  return true;
+}
+
+function handleArmoryWheel(event) {
+  if (!armoryEditorState.active || !event.target.closest?.(".armory-silhouette")) {
+    return;
+  }
+
+  const item = getItemFromId(event.target.closest(".armory-silhouette").dataset.armoryItem);
+
+  if (!item) {
+    return;
+  }
+
+  event.preventDefault();
+  selectArmoryEditorItem(item);
+  scaleSelectedArmoryItem(event.deltaY < 0 ? 1.035 : 0.965);
+}
+
+function openArmoryItem(item, trigger) {
+  if (
+    !armoryModal
+    || !armoryModalImage
+    || !armoryModalTitle
+    || !armoryModalDescription
+  ) {
+    return;
+  }
+
+  setArmoryHoverItem(null);
+  lastArmoryFocus = trigger ?? document.activeElement;
+  armoryModalImage.src = item.image;
+  armoryModalImage.alt = item.title;
+  armoryModalTitle.textContent = item.title;
+  armoryModalDescription.textContent = item.description;
+  armoryModal.classList.add("is-open");
+  armoryModal.inert = false;
+  armoryModal.removeAttribute("inert");
+  armoryModal.setAttribute("aria-hidden", "false");
+  document.body.classList.add("has-armory-modal");
+  playOneShot(audioTracks.uiClick, 0.14);
+
+  window.setTimeout(() => {
+    armoryModalClose?.focus();
+  }, 0);
+}
+
+function closeArmoryItem(options = {}) {
+  if (!armoryModal || !armoryModal.classList.contains("is-open")) {
+    return;
+  }
+
+  armoryModal.classList.remove("is-open");
+  armoryModal.inert = true;
+  armoryModal.setAttribute("inert", "");
+  armoryModal.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("has-armory-modal");
+
+  if (options.restoreFocus !== false && typeof lastArmoryFocus?.focus === "function") {
+    lastArmoryFocus.focus();
+  }
+}
+
+function openHalLogin() {
+  if (!halLogin || !halPassword) {
+    return;
+  }
+
+  lastHalFocus = document.activeElement;
+  halLogin.classList.add("is-open");
+  halLogin.inert = false;
+  halLogin.removeAttribute("inert");
+  halLogin.setAttribute("aria-hidden", "false");
+  halPassword.value = "";
+
+  if (halLoginError) {
+    halLoginError.hidden = true;
+  }
+
+  window.setTimeout(() => {
+    halPassword.focus();
+  }, 0);
+}
+
+function closeHalLogin(options = {}) {
+  if (!halLogin || !halLogin.classList.contains("is-open")) {
+    return;
+  }
+
+  halLogin.classList.remove("is-open");
+  halLogin.inert = true;
+  halLogin.setAttribute("inert", "");
+  halLogin.setAttribute("aria-hidden", "true");
+
+  if (options.restoreFocus !== false && typeof lastHalFocus?.focus === "function") {
+    lastHalFocus.focus();
+  }
+}
+
+function submitHalLogin(event) {
+  event.preventDefault();
+
+  if (halPassword?.value === ARMORY_PASSWORD) {
+    enterArmoryEditor();
+    return;
+  }
+
+  if (halLoginError) {
+    halLoginError.hidden = false;
+  }
+
+  halPassword?.select();
 }
 
 function layoutStasisBay() {
@@ -714,8 +1435,78 @@ audioToggle?.addEventListener("click", () => {
   toggleSceneAudio();
 });
 
+halTrigger?.addEventListener("click", () => {
+  playOneShot(audioTracks.uiClick, 0.14);
+  openHalLogin();
+});
+
+halLoginForm?.addEventListener("submit", submitHalLogin);
+
+halLoginCancel?.addEventListener("click", () => {
+  closeHalLogin();
+});
+
+halLogin?.querySelector(".hal-login__scrim")?.addEventListener("click", () => {
+  closeHalLogin();
+});
+
+armoryModalClose?.addEventListener("click", () => {
+  closeArmoryItem();
+});
+
+armoryModal?.querySelector(".armory-modal__scrim")?.addEventListener("click", () => {
+  closeArmoryItem();
+});
+
+armoryEditorSave?.addEventListener("click", () => {
+  saveArmoryPlacements();
+  showArmoryToast("Sagome salvate");
+  exitArmoryEditor();
+});
+
+armoryEditorReset?.addEventListener("click", () => {
+  resetArmoryPlacements();
+});
+
+armoryEditorExit?.addEventListener("click", () => {
+  exitArmoryEditor();
+});
+
+for (const scaleButton of document.querySelectorAll("[data-armory-scale]")) {
+  scaleButton.addEventListener("click", () => {
+    scaleSelectedArmoryItem(Number(scaleButton.dataset.armoryScale));
+  });
+}
+
+document.addEventListener("pointerdown", handleArmoryPointerDown, true);
+document.addEventListener("click", handleArmoryClick, true);
+document.addEventListener("pointermove", handleArmoryPointerMove);
+document.addEventListener("pointerup", handleArmoryPointerUp);
+document.addEventListener("wheel", handleArmoryWheel, { passive: false });
+
 document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") {
+    const nudgeAmount = event.shiftKey ? 10 : 1;
+
+    if (nudgeSelectedArmoryItem(event.key, nudgeAmount)) {
+      event.preventDefault();
+    }
+
+    return;
+  }
+
+  if (halLogin?.classList.contains("is-open")) {
+    closeHalLogin();
+    return;
+  }
+
+  if (armoryModal?.classList.contains("is-open")) {
+    closeArmoryItem();
+    return;
+  }
+
+  if (armoryEditorState.active) {
+    exitArmoryEditor();
     return;
   }
 
@@ -740,6 +1531,8 @@ document.addEventListener("visibilitychange", () => {
   syncSceneAudio();
 });
 
+buildArmoryHotspots();
+layoutArmoryHotspots();
 layoutStasisBay();
 layoutRobotBay();
 layoutHud();
@@ -748,6 +1541,7 @@ refreshHudTelemetry();
 updateAudioToggle();
 window.setInterval(refreshHudTelemetry, 1100);
 window.addEventListener("resize", () => {
+  layoutArmoryHotspots();
   layoutStasisBay();
   layoutRobotBay();
   layoutHud();

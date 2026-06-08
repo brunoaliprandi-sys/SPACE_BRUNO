@@ -15,6 +15,37 @@
       ></div>
       <div class="scene__vignette" aria-hidden="true"></div>
       <div class="scene__atmosphere" aria-hidden="true"></div>
+      <div class="armory-layer" id="armory-layer" aria-label="Rastrelliere armi e attrezzature"></div>
+
+      <button
+        class="hal-trigger"
+        id="hal-trigger"
+        type="button"
+        aria-label="Apri console HAL-9000"
+      >
+        <span class="hal-trigger__lens" aria-hidden="true"></span>
+        <span class="hal-trigger__label">HAL-9000</span>
+      </button>
+
+      <section
+        class="armory-editor"
+        id="armory-editor"
+        aria-hidden="true"
+      >
+        <div class="armory-editor__status">
+          <span class="armory-editor__eyebrow">HAL-9000 / ARMORY ALIGN</span>
+          <strong class="armory-editor__item" id="armory-editor-item">NESSUNA SAGOMA</strong>
+        </div>
+        <div class="armory-editor__controls">
+          <button class="armory-editor__button" type="button" data-armory-scale="0.96">Scala -</button>
+          <button class="armory-editor__button" type="button" data-armory-scale="1.04">Scala +</button>
+          <button class="armory-editor__button" id="armory-editor-save" type="button">Salva</button>
+          <button class="armory-editor__button" id="armory-editor-reset" type="button">Reset</button>
+          <button class="armory-editor__button" id="armory-editor-exit" type="button">Esci</button>
+        </div>
+      </section>
+
+      <div class="armory-toast" id="armory-toast" role="status" aria-live="polite" aria-hidden="true"></div>
 
       <header class="scene-header" aria-label="Intestazione monitor stasi">
         <div class="hud-footer__core scene-header__core">
@@ -195,6 +226,60 @@
           <span>Audio: <a href="https://opengameart.org/content/50-cc0-sci-fi-sfx" target="_blank" rel="noreferrer">rubberduck</a> / <a href="https://kenney.nl/assets/ui-audio" target="_blank" rel="noreferrer">Kenney</a></span>
         </small>
       </footer>
+
+      <div
+        class="armory-modal"
+        id="armory-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="armory-modal-title"
+        aria-describedby="armory-modal-description"
+        aria-hidden="true"
+      >
+        <button class="armory-modal__scrim" type="button" aria-label="Chiudi dettaglio oggetto"></button>
+        <article class="armory-modal__panel">
+          <button class="armory-modal__close" id="armory-modal-close" type="button" aria-label="Chiudi dettaglio oggetto">
+            <span aria-hidden="true">&times;</span>
+          </button>
+          <div class="armory-modal__image-shell">
+            <img id="armory-modal-image" class="armory-modal__image" src="" alt="" decoding="async">
+          </div>
+          <div class="armory-modal__content">
+            <span class="armory-modal__eyebrow">ARMORY / ITEM SCAN</span>
+            <h2 class="armory-modal__title" id="armory-modal-title"></h2>
+            <p class="armory-modal__description" id="armory-modal-description"></p>
+          </div>
+        </article>
+      </div>
+
+      <div
+        class="hal-login"
+        id="hal-login"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="hal-login-title"
+        aria-hidden="true"
+      >
+        <button class="hal-login__scrim" type="button" aria-label="Chiudi console HAL-9000"></button>
+        <form class="hal-login__panel" id="hal-login-form">
+          <span class="hal-login__lens" aria-hidden="true"></span>
+          <h2 class="hal-login__title" id="hal-login-title">HAL-9000</h2>
+          <label class="hal-login__label" for="hal-password">Password</label>
+          <input
+            class="hal-login__input"
+            id="hal-password"
+            name="password"
+            type="password"
+            inputmode="numeric"
+            autocomplete="off"
+          >
+          <p class="hal-login__error" id="hal-login-error" hidden>Accesso negato</p>
+          <div class="hal-login__actions">
+            <button class="hal-login__button" type="submit">Accedi</button>
+            <button class="hal-login__button hal-login__button--ghost" id="hal-login-cancel" type="button">Annulla</button>
+          </div>
+        </form>
+      </div>
     </main>
 
     <script src="script.js"></script>
