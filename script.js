@@ -235,7 +235,7 @@ function createAudioTrack(src, options = {}) {
 const audioTracks = {
   ambience: createAudioTrack("assets/audio/ambience-spaceship.ogg", {
     loop: true,
-    volume: 0.32,
+    volume: 0.52,
   }),
   robotLoop: createAudioTrack("assets/audio/robot-loop.ogg", {
     loop: true,
