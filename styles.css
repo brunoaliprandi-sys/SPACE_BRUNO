@@ -1,0 +1,283 @@
+:root {
+  --bg: #02060b;
+  --blue-1: rgba(79, 176, 255, 0.82);
+  --blue-2: rgba(91, 219, 255, 0.34);
+  --blue-3: rgba(146, 231, 255, 0.16);
+  --glass: rgba(154, 219, 255, 0.12);
+  --frame: rgba(167, 229, 255, 0.28);
+  --text: rgba(196, 234, 255, 0.86);
+  --shadow: rgba(0, 0, 0, 0.64);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+}
+
+body {
+  overflow: hidden;
+  font-family: "Bahnschrift", "Eurostile", "Segoe UI", sans-serif;
+}
+
+.scene {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  background: var(--bg);
+  isolation: isolate;
+}
+
+.scene__backdrop,
+.scene__vignette,
+.scene__atmosphere,
+.stasis-bay,
+.hud {
+  position: absolute;
+}
+
+.scene__backdrop,
+.scene__vignette,
+.scene__atmosphere {
+  inset: 0;
+}
+
+.scene__backdrop {
+  background:
+    radial-gradient(circle at center, rgba(98, 180, 255, 0.08), transparent 26%),
+    url("BG/BG_navicella_1.png") center center / cover no-repeat;
+}
+
+.scene__vignette {
+  background:
+    radial-gradient(circle at center, transparent 38%, rgba(2, 6, 11, 0.18) 55%, rgba(2, 6, 11, 0.82) 100%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.42), transparent 24%, transparent 76%, rgba(0, 0, 0, 0.52));
+  pointer-events: none;
+}
+
+.scene__atmosphere {
+  background:
+    radial-gradient(circle at 50% 52%, rgba(88, 182, 255, 0.08), transparent 22%),
+    repeating-linear-gradient(
+      180deg,
+      rgba(182, 236, 255, 0.022) 0,
+      rgba(182, 236, 255, 0.022) 2px,
+      transparent 2px,
+      transparent 7px
+    );
+  mix-blend-mode: screen;
+  opacity: 0.64;
+  animation: shimmer 5.4s linear infinite;
+  pointer-events: none;
+}
+
+.stasis-bay {
+  z-index: 2;
+  pointer-events: none;
+}
+
+.stasis-bay__core {
+  position: absolute;
+  inset: 3.4% 11.6% 7.2%;
+  overflow: hidden;
+  clip-path: polygon(
+    18% 0%,
+    82% 0%,
+    94% 6.2%,
+    100% 14.5%,
+    100% 85.5%,
+    94% 93.8%,
+    82% 100%,
+    18% 100%,
+    6% 93.8%,
+    0% 85.5%,
+    0% 14.5%,
+    6% 6.2%
+  );
+  border: 1px solid rgba(184, 235, 255, 0.08);
+  box-shadow:
+    inset 0 0 0 1px rgba(144, 214, 255, 0.06),
+    0 0 18px rgba(63, 154, 255, 0.08);
+}
+
+.stasis-bay__core::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(191, 245, 255, 0.1), transparent 18%, transparent 78%, rgba(191, 245, 255, 0.08)),
+    radial-gradient(circle at 50% 10%, rgba(207, 248, 255, 0.2), transparent 18%),
+    linear-gradient(90deg, rgba(50, 156, 255, 0.04), transparent 18%, transparent 82%, rgba(50, 156, 255, 0.04));
+  pointer-events: none;
+}
+
+.stasis-bay__glow,
+.stasis-bay__mist,
+.stasis-bay__scan,
+.stasis-bay__glass {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.stasis-bay__glow {
+  background:
+    radial-gradient(circle at 50% 18%, rgba(145, 230, 255, 0.38), transparent 24%),
+    radial-gradient(circle at 50% 68%, rgba(41, 149, 255, 0.14), transparent 46%);
+  filter: blur(12px);
+  opacity: 0.56;
+  animation: chamberPulse 3.8s ease-in-out infinite;
+}
+
+.bruno {
+  position: absolute;
+  left: 50%;
+  bottom: 1.2%;
+  width: 82%;
+  max-height: 90%;
+  height: auto;
+  transform: translateX(-50%) scale(1.08);
+  transform-origin: center bottom;
+  filter:
+    brightness(0.88)
+    saturate(0.94)
+    contrast(1.02)
+    drop-shadow(0 0 10px rgba(87, 198, 255, 0.16))
+    drop-shadow(0 10px 24px rgba(0, 0, 0, 0.34));
+  opacity: 0.93;
+}
+
+.stasis-bay__mist {
+  background:
+    radial-gradient(circle at 50% 12%, rgba(208, 246, 255, 0.08), transparent 16%),
+    radial-gradient(circle at 50% 96%, rgba(208, 246, 255, 0.06), transparent 14%),
+    linear-gradient(180deg, rgba(153, 215, 255, 0.03), transparent 18%, transparent 82%, rgba(153, 215, 255, 0.03));
+  mix-blend-mode: screen;
+  opacity: 0.22;
+  filter: blur(10px);
+  animation: mistFloat 8s ease-in-out infinite alternate;
+}
+
+.stasis-bay__scan {
+  background:
+    linear-gradient(
+      180deg,
+      transparent 0%,
+      rgba(185, 240, 255, 0.02) 42%,
+      rgba(226, 251, 255, 0.1) 50%,
+      rgba(185, 240, 255, 0.03) 58%,
+      transparent 100%
+    );
+  opacity: 0.2;
+  mix-blend-mode: screen;
+  animation: scanline 5.6s linear infinite;
+}
+
+.stasis-bay__glass {
+  inset: 0.6%;
+  clip-path: inherit;
+  background:
+    linear-gradient(90deg, rgba(201, 240, 255, 0.12) 0 2.5%, transparent 10% 90%, rgba(201, 240, 255, 0.12) 97.5% 100%),
+    linear-gradient(180deg, rgba(198, 243, 255, 0.08) 0 2.2%, transparent 10% 90%, rgba(198, 243, 255, 0.06) 97.8% 100%),
+    linear-gradient(102deg, transparent 0 24%, rgba(255, 255, 255, 0.07) 29%, rgba(255, 255, 255, 0.015) 34%, transparent 39%);
+  border: 1px solid rgba(197, 236, 255, 0.08);
+  box-shadow:
+    inset 0 0 10px rgba(84, 176, 255, 0.05),
+    inset 0 0 1px rgba(214, 248, 255, 0.12);
+}
+
+.hud {
+  left: 50%;
+  bottom: 3.2vh;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 1.1rem;
+  align-items: center;
+  z-index: 3;
+  padding: 0.55rem 0.9rem;
+  border: 1px solid rgba(149, 224, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(4, 12, 22, 0.44);
+  backdrop-filter: blur(8px);
+  color: var(--text);
+  font-size: clamp(0.74rem, 0.58rem + 0.4vw, 0.92rem);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.hud__status {
+  color: rgba(150, 231, 255, 0.96);
+}
+
+@keyframes shimmer {
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(7px);
+  }
+}
+
+@keyframes chamberPulse {
+  0%,
+  100% {
+    opacity: 0.46;
+    transform: scale(0.985);
+  }
+
+  50% {
+    opacity: 0.78;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes mistFloat {
+  from {
+    transform: translateY(0) scale(1);
+  }
+
+  to {
+    transform: translateY(-2.8%) scale(1.04);
+  }
+}
+
+@keyframes scanline {
+  from {
+    transform: translateY(-105%);
+  }
+
+  to {
+    transform: translateY(105%);
+  }
+}
+
+@media (max-width: 800px) {
+  .bruno {
+    width: 83%;
+    max-height: 88%;
+    bottom: 1.8%;
+  }
+
+  .hud {
+    bottom: 2.4vh;
+    gap: 0.65rem;
+    padding: 0.48rem 0.72rem;
+    letter-spacing: 0.18em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene__backdrop,
+  .scene__atmosphere,
+  .stasis-bay__glow,
+  .stasis-bay__mist,
+  .stasis-bay__scan {
+    animation: none;
+  }
+}
