@@ -39,6 +39,53 @@ const CHARACTER_PROFILES = {
     alt: "Alieno 1 in animazione idle all'interno della cella criogenica",
   },
 };
+const CHARACTER_DOSSIERS = {
+  bruno: {
+    triggerLabel: "Bio Bruno",
+    triggerHint: "DOSSIER FOLGORE",
+    eyebrow: "MISSION DOSSIER / FOLGORE ASSAULT UNIT",
+    title: "Bruno / Unità d'Urto Orbitale",
+    image: "animazioni/Bruno/IDLE_stasi_criogenica/frame_0000.png",
+    bio: [
+      "Bruno è il martello della missione: un operatore da combattimento spaziale addestrato dalla Folgore per abbordaggi, contenimento rapido e guerra nei corridoi pressurizzati. Dove gli altri vedono una paratia, lui vede copertura; dove gli altri sentono un rumore, lui calcola traiettoria, distanza e tempo di reazione.",
+      "Il suo profilo operativo registra impianti muscolari da accelerazione, tolleranza estrema allo stress e un archivio di interventi in ambienti ostili che va dai relitti minerari alle stazioni in blackout. In parole semplici: se qualcosa esce dalla cella, Bruno è la linea di confine tra l'equipaggio e il panico.",
+    ],
+    log: [
+      "Registro personale 07. Non mi piace il carico. Le letture restano pulite ma la nave reagisce alla sua presenza come se se ne accorgesse prima dei sensori: vibrazioni secche, silenzi troppo lunghi, riflessi che sembrano spostarsi un istante in ritardo.",
+      "Ho ricontrollato chiusure, percorsi di contenimento e punti ciechi del corridoio. Se la consegna si complica, Donatella tiene il vettore in vita e io tengo il problema lontano dal resto della nave. Piano semplice. Spero resti semplice.",
+    ],
+  },
+  donatella: {
+    triggerLabel: "Bio Donatella",
+    triggerHint: "MED / PILOT LOG",
+    eyebrow: "MISSION DOSSIER / FLIGHT MEDIC",
+    title: "Donatella / Medico E Pilota",
+    image: "animazioni/Donatella/IDLE_stasi_criogenica/frame_0000.png",
+    bio: [
+      "Donatella è la mente fredda dietro il viaggio: medico di bordo, pilota titolare e custode dei protocolli di stasi. Sa rimettere in sesto una frattura in microgravità, stabilizzare un collasso pressorio e poi allineare la nave alla finestra orbitale senza cambiare tono di voce.",
+      "Ha riprogettato la cryo del carico per una traversata lunga, lontana da porti sicuri e con margine di errore praticamente nullo. Se Bruno è il braccio della missione, Donatella è il sistema nervoso che impedisce a tutto il resto di andare in arresto.",
+    ],
+    log: [
+      "Diario di bordo 12. Rotta stabile, consumi sotto soglia, finestra di trasferimento ancora favorevole. Bruno continua a chiamare l'alieno \"problema\"; io continuo a chiamarlo \"carico biologico ad alto rischio\", che è il modo professionale di dire la stessa identica cosa.",
+      "La cella risponde bene, ma non mi fido del silenzio. Gli organismi sconosciuti non smettono mai davvero di parlare: a volte cambiano solo linguaggio, e lo fanno in curve termiche, micromovimenti e tempi sbagliati dei sedativi.",
+    ],
+  },
+  alieno: {
+    triggerLabel: "Bio Carico",
+    triggerHint: "CARGO XENO LOG",
+    eyebrow: "MISSION DOSSIER / PRIORITY CARGO",
+    title: "Alieno 1 / Carico Biologico Vivo",
+    image: "animazioni/Alieno_1/Idle/frame_0000.png",
+    bio: [
+      "Denominazione provvisoria: Alieno 1. Non è un passeggero e non è un prigioniero nel senso umano del termine: è il fulcro della missione. Il soggetto viene trasportato in criosospensione verso un altro pianeta, dove una struttura di frontiera dovrebbe disporre del contenimento necessario per studiarlo senza mettere a rischio l'equipaggio.",
+      "La morfologia è instabile ma coerente con un predatore adattivo: tessuti resilienti, metabolismo irregolare, risposta neurale anomala e un comportamento da stasi che assomiglia più a un'attesa controllata che a un vero sonno biologico.",
+    ],
+    log: [
+      "Allegato di missione / accesso limitato. Durante il transito il carico ha mostrato microvariazioni autonome di temperatura e consumo di reagenti nonostante il regime di stasi. Nessuna evasione, nessuna frattura della cella, ma troppa iniziativa per qualcosa che dovrebbe essere immobile.",
+      "Ordine operativo confermato: non aprire la cryo, non improvvisare contatto, non confondere quiete con docilità. Il pianeta di destinazione può permettersi di studiarlo. Questa nave può permettersi soltanto di consegnarlo.",
+    ],
+  },
+};
 const ROOM_SEQUENCE = ["bruno", "donatella", "alieno"];
 const ROBOT_FRAME_COUNT = 36;
 const ROBOT_BASE_WIDTH = 390;
@@ -198,13 +245,26 @@ const brunoFrame = document.getElementById("bruno-frame");
 const roomLabel = document.getElementById("room-label");
 const roomPrev = document.getElementById("room-prev");
 const roomNext = document.getElementById("room-next");
-const hudTriggers = document.querySelectorAll(".hud-trigger");
+const hudTriggers = document.querySelectorAll(".hud-trigger[data-panel-target]");
 const armoryLayer = document.getElementById("armory-layer");
 const armoryModal = document.getElementById("armory-modal");
 const armoryModalImage = document.getElementById("armory-modal-image");
 const armoryModalTitle = document.getElementById("armory-modal-title");
 const armoryModalDescription = document.getElementById("armory-modal-description");
 const armoryModalClose = document.getElementById("armory-modal-close");
+const dossierTrigger = document.getElementById("dossier-trigger");
+const dossierTriggerLabel = dossierTrigger?.querySelector(".hud-trigger__label");
+const dossierTriggerHint = dossierTrigger?.querySelector(".hud-trigger__hint");
+const dossierModal = document.getElementById("dossier-modal");
+const dossierModalPanel = dossierModal?.querySelector(".dossier-modal__panel");
+const dossierModalBody = document.getElementById("dossier-modal-body");
+const dossierModalImage = document.getElementById("dossier-modal-image");
+const dossierModalEyebrow = document.getElementById("dossier-modal-eyebrow");
+const dossierModalTitle = document.getElementById("dossier-modal-title");
+const dossierModalBio = document.getElementById("dossier-modal-bio");
+const dossierModalLog = document.getElementById("dossier-modal-log");
+const dossierModalClose = document.getElementById("dossier-modal-close");
+const dossierModalTabs = document.querySelectorAll("[data-dossier-tab]");
 const halTrigger = document.getElementById("hal-trigger");
 const halLogin = document.getElementById("hal-login");
 const halLoginForm = document.getElementById("hal-login-form");
@@ -269,10 +329,19 @@ const armoryEditorState = {
   dragOffsetX: 0,
   dragOffsetY: 0,
 };
+const dossierModalState = {
+  room: "bruno",
+  tab: "bio",
+};
 
 if (armoryModal) {
   armoryModal.inert = true;
   armoryModal.setAttribute("inert", "");
+}
+
+if (dossierModal) {
+  dossierModal.inert = true;
+  dossierModal.setAttribute("inert", "");
 }
 
 if (halLogin) {
@@ -1711,6 +1780,7 @@ function handleArmoryPointerDown(event) {
   if (
     event.button !== 0
     || armoryModal?.classList.contains("is-open")
+    || dossierModal?.classList.contains("is-open")
     || halLogin?.classList.contains("is-open")
     || event.target.closest(ARMORY_INTERACTION_EXCLUSIONS)
   ) {
@@ -1800,6 +1870,7 @@ function handleArmoryPointerMove(event) {
     if (
       armoryEditorState.active
       || armoryModal?.classList.contains("is-open")
+      || dossierModal?.classList.contains("is-open")
       || halLogin?.classList.contains("is-open")
       || event.target.closest?.(ARMORY_INTERACTION_EXCLUSIONS)
     ) {
@@ -1859,6 +1930,7 @@ function handleArmoryClick(event) {
   if (
     armoryEditorState.active
     || armoryModal?.classList.contains("is-open")
+    || dossierModal?.classList.contains("is-open")
     || halLogin?.classList.contains("is-open")
     || event.target.closest?.(ARMORY_INTERACTION_EXCLUSIONS)
   ) {
@@ -2027,6 +2099,147 @@ function closeArmoryItem(options = {}) {
   if (options.restoreFocus !== false && typeof lastArmoryFocus?.focus === "function") {
     lastArmoryFocus.focus();
   }
+}
+
+function renderDossierParagraphs(lines) {
+  return lines.map((line) => `<p>${line}</p>`).join("");
+}
+
+function resetDossierScroll() {
+  if (!dossierModalBody) {
+    return;
+  }
+
+  dossierModalBody.scrollTop = 0;
+}
+
+function updateDossierTrigger() {
+  if (!dossierTrigger) {
+    return;
+  }
+
+  const dossier = CHARACTER_DOSSIERS[activeRoom];
+
+  dossierTrigger.setAttribute("aria-label", `Apri bio e diario di bordo di ${CHARACTER_PROFILES[activeRoom].name}`);
+  if (dossierTriggerLabel) {
+    dossierTriggerLabel.textContent = dossier.triggerLabel;
+  }
+  if (dossierTriggerHint) {
+    dossierTriggerHint.textContent = dossier.triggerHint;
+  }
+}
+
+function setDossierTab(nextTab) {
+  if (!dossierModalBio || !dossierModalLog) {
+    return;
+  }
+
+  dossierModalState.tab = nextTab === "log" ? "log" : "bio";
+
+  for (const tab of dossierModalTabs) {
+    const isActive = tab.dataset.dossierTab === dossierModalState.tab;
+    tab.classList.toggle("is-active", isActive);
+    tab.setAttribute("aria-selected", String(isActive));
+    tab.tabIndex = isActive ? 0 : -1;
+  }
+
+  const bioPanel = document.getElementById("dossier-panel-bio");
+  const logPanel = document.getElementById("dossier-panel-log");
+  const isBioActive = dossierModalState.tab === "bio";
+
+  bioPanel?.classList.toggle("is-active", isBioActive);
+  logPanel?.classList.toggle("is-active", !isBioActive);
+  if (bioPanel) {
+    bioPanel.hidden = !isBioActive;
+  }
+  if (logPanel) {
+    logPanel.hidden = isBioActive;
+  }
+
+  resetDossierScroll();
+}
+
+function renderDossierModal() {
+  const dossier = CHARACTER_DOSSIERS[dossierModalState.room];
+
+  if (
+    !dossier
+    || !dossierModalImage
+    || !dossierModalEyebrow
+    || !dossierModalTitle
+    || !dossierModalBio
+    || !dossierModalLog
+  ) {
+    return;
+  }
+
+  dossierModalImage.src = dossier.image;
+  dossierModalImage.alt = dossier.title;
+  dossierModalEyebrow.textContent = dossier.eyebrow;
+  dossierModalTitle.textContent = dossier.title;
+  dossierModalBio.innerHTML = renderDossierParagraphs(dossier.bio);
+  dossierModalLog.innerHTML = renderDossierParagraphs(dossier.log);
+  setDossierTab(dossierModalState.tab);
+}
+
+function openDossierModal(room = activeRoom, trigger = dossierTrigger) {
+  if (!dossierModal) {
+    return;
+  }
+
+  dossierModalState.room = room;
+  dossierModalState.tab = "bio";
+  closeHalLogin({ restoreFocus: false });
+  closeArmoryItem({ restoreFocus: false });
+  renderDossierModal();
+  resetDossierScroll();
+  lastArmoryFocus = trigger ?? document.activeElement;
+  dossierModal.classList.add("is-open");
+  dossierModal.inert = false;
+  dossierModal.removeAttribute("inert");
+  dossierModal.setAttribute("aria-hidden", "false");
+  dossierTrigger?.setAttribute("aria-expanded", "true");
+  document.body.classList.add("has-armory-modal");
+  playOneShot(audioTracks.uiClick, 0.14);
+
+  window.setTimeout(() => {
+    dossierModalClose?.focus();
+  }, 0);
+}
+
+function closeDossierModal(options = {}) {
+  if (!dossierModal || !dossierModal.classList.contains("is-open")) {
+    return;
+  }
+
+  dossierModal.classList.remove("is-open");
+  dossierModal.inert = true;
+  dossierModal.setAttribute("inert", "");
+  dossierModal.setAttribute("aria-hidden", "true");
+  dossierTrigger?.setAttribute("aria-expanded", "false");
+  document.body.classList.remove("has-armory-modal");
+
+  if (options.restoreFocus !== false && typeof lastArmoryFocus?.focus === "function") {
+    lastArmoryFocus.focus();
+  }
+}
+
+function handleDossierModalWheel(event) {
+  if (!dossierModal?.classList.contains("is-open") || !dossierModalBody) {
+    return;
+  }
+
+  const maxScrollTop = dossierModalBody.scrollHeight - dossierModalBody.clientHeight;
+  if (maxScrollTop <= 0 || Math.abs(event.deltaY) <= Math.abs(event.deltaX)) {
+    return;
+  }
+
+  event.preventDefault();
+  const nextScrollTop = Math.min(
+    maxScrollTop,
+    Math.max(0, dossierModalBody.scrollTop + event.deltaY),
+  );
+  dossierModalBody.scrollTop = nextScrollTop;
 }
 
 function openHalLogin() {
@@ -2321,6 +2534,7 @@ function updateRoomNavigation() {
   }
 
   applyCharacterShadowPlacement();
+  updateDossierTrigger();
   syncStasisOccupantVisibility();
   updateAlienToggle();
   syncAlienWalkerVisibility();
@@ -2689,8 +2903,12 @@ for (const trigger of hudTriggers) {
   });
 }
 
-robotToggle?.addEventListener("click", () => {
-  toggleRobot();
+dossierTrigger?.addEventListener("click", () => {
+  if (armoryEditorState.active) {
+    return;
+  }
+
+  openDossierModal(activeRoom, dossierTrigger);
 });
 
 alienToggle?.addEventListener("click", () => {
@@ -2744,6 +2962,23 @@ armoryModal?.querySelector(".armory-modal__scrim")?.addEventListener("click", ()
 
   closeArmoryItem();
 });
+
+dossierModalClose?.addEventListener("click", () => {
+  closeDossierModal();
+});
+
+dossierModal?.querySelector(".armory-modal__scrim")?.addEventListener("click", () => {
+  closeDossierModal();
+});
+
+dossierModalPanel?.addEventListener("wheel", handleDossierModalWheel, { passive: false });
+
+for (const tab of dossierModalTabs) {
+  tab.addEventListener("click", () => {
+    playOneShot(audioTracks.uiClick, 0.12);
+    setDossierTab(tab.dataset.dossierTab);
+  });
+}
 
 armoryEditorSave?.addEventListener("click", () => {
   saveArmoryPlacements();
@@ -2850,6 +3085,11 @@ document.addEventListener("keydown", (event) => {
 
   if (halLogin?.classList.contains("is-open")) {
     closeHalLogin();
+    return;
+  }
+
+  if (dossierModal?.classList.contains("is-open")) {
+    closeDossierModal();
     return;
   }
 

@@ -141,21 +141,22 @@
             </button>
 
             <button
-              class="hud-trigger hud-trigger--robot hud-trigger--embedded"
-              id="robot-toggle"
+              class="hud-trigger hud-trigger--dossier hud-trigger--embedded"
+              id="dossier-trigger"
               type="button"
-              aria-pressed="false"
-              aria-label="Attiva o nascondi robot pulizie"
+              aria-expanded="false"
+              aria-controls="dossier-modal"
+              aria-label="Apri bio e diario di bordo del soggetto attivo"
             >
               <img
-                class="hud-trigger__icon-image hud-trigger__icon-image--robot"
-                src="assets/icons/vacuum-cleaner.svg"
+                class="hud-trigger__icon-image hud-trigger__icon-image--dossier"
+                src="assets/icons/mission-dossier.svg"
                 alt=""
                 aria-hidden="true"
                 decoding="async"
               >
-              <span class="hud-trigger__label">Robot</span>
-              <span class="hud-trigger__hint">EVOCA ROBOT</span>
+              <span class="hud-trigger__label">Bio</span>
+              <span class="hud-trigger__hint">DIARIO BORDO</span>
             </button>
 
             <button
@@ -328,6 +329,71 @@
             <span class="armory-modal__eyebrow">ARMORY / ITEM SCAN</span>
             <h2 class="armory-modal__title" id="armory-modal-title"></h2>
             <p class="armory-modal__description" id="armory-modal-description"></p>
+          </div>
+        </article>
+      </div>
+
+      <div
+        class="armory-modal dossier-modal"
+        id="dossier-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="dossier-modal-title"
+        aria-describedby="dossier-modal-body"
+        aria-hidden="true"
+      >
+        <button class="armory-modal__scrim" type="button" aria-label="Chiudi dossier missione"></button>
+        <article class="armory-modal__panel dossier-modal__panel">
+          <button class="armory-modal__close" id="dossier-modal-close" type="button" aria-label="Chiudi dossier missione">
+            <span aria-hidden="true">&times;</span>
+          </button>
+          <div class="armory-modal__image-shell dossier-modal__image-shell">
+            <img id="dossier-modal-image" class="armory-modal__image dossier-modal__image" src="" alt="" decoding="async">
+          </div>
+          <div class="armory-modal__content dossier-modal__content" id="dossier-modal-body">
+            <span class="armory-modal__eyebrow" id="dossier-modal-eyebrow">MISSION DOSSIER / ACTIVE SUBJECT</span>
+            <h2 class="armory-modal__title" id="dossier-modal-title"></h2>
+            <div class="dossier-modal__tabs" role="tablist" aria-label="Schede dossier">
+              <button
+                class="dossier-modal__tab is-active"
+                id="dossier-tab-bio"
+                type="button"
+                role="tab"
+                aria-selected="true"
+                aria-controls="dossier-panel-bio"
+                data-dossier-tab="bio"
+              >
+                Bio
+              </button>
+              <button
+                class="dossier-modal__tab"
+                id="dossier-tab-log"
+                type="button"
+                role="tab"
+                aria-selected="false"
+                aria-controls="dossier-panel-log"
+                data-dossier-tab="log"
+              >
+                Diario di bordo
+              </button>
+            </div>
+            <section
+              class="dossier-modal__panel-copy is-active"
+              id="dossier-panel-bio"
+              role="tabpanel"
+              aria-labelledby="dossier-tab-bio"
+            >
+              <div class="dossier-modal__copy" id="dossier-modal-bio"></div>
+            </section>
+            <section
+              class="dossier-modal__panel-copy"
+              id="dossier-panel-log"
+              role="tabpanel"
+              aria-labelledby="dossier-tab-log"
+              hidden
+            >
+              <div class="dossier-modal__copy" id="dossier-modal-log"></div>
+            </section>
           </div>
         </article>
       </div>
