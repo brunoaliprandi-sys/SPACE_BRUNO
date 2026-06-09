@@ -40,8 +40,19 @@
           <button class="armory-editor__button" type="button" data-armory-scale="0.96">Scala -</button>
           <button class="armory-editor__button" type="button" data-armory-scale="1.04">Scala +</button>
           <button class="armory-editor__button" id="armory-editor-save" type="button">Salva</button>
+          <button class="armory-editor__button" id="armory-editor-export" type="button">Scarica JSON</button>
           <button class="armory-editor__button" id="armory-editor-reset" type="button">Reset</button>
           <button class="armory-editor__button" id="armory-editor-exit" type="button">Esci</button>
+        </div>
+        <div class="armory-editor__transcript">
+          <span class="armory-editor__eyebrow">armory-placements.json</span>
+          <textarea
+            class="armory-editor__json"
+            id="armory-editor-json"
+            readonly
+            spellcheck="false"
+            aria-label="JSON coordinate armeria"
+          ></textarea>
         </div>
       </section>
 

@@ -36,6 +36,7 @@ const ROBOT_FRAME_COUNT = 36;
 const ROBOT_BASE_WIDTH = 390;
 const ROBOT_IDLE_MODES = ["move", "clean"];
 const ARMORY_STORAGE_KEY = "space-bruno-armory-placements-v1";
+const ARMORY_EXPORT_FILE_NAME = "armory-placements.json";
 const ARMORY_PASSWORD = "2001";
 const ARMORY_ALPHA_THRESHOLD = 24;
 const ARMORY_ITEMS = [
@@ -143,8 +144,10 @@ const halLoginCancel = document.getElementById("hal-login-cancel");
 const armoryEditor = document.getElementById("armory-editor");
 const armoryEditorItem = document.getElementById("armory-editor-item");
 const armoryEditorSave = document.getElementById("armory-editor-save");
+const armoryEditorExport = document.getElementById("armory-editor-export");
 const armoryEditorReset = document.getElementById("armory-editor-reset");
 const armoryEditorExit = document.getElementById("armory-editor-exit");
+const armoryEditorJson = document.getElementById("armory-editor-json");
 const armoryToast = document.getElementById("armory-toast");
 const ARMORY_INTERACTION_EXCLUSIONS = [
   ".scene-header",
@@ -588,6 +591,52 @@ function getDefaultArmoryPlacements() {
   );
 }
 
+function normalizeArmoryPlacement(placement) {
+  return {
+    x: Number(placement.x.toFixed(2)),
+    y: Number(placement.y.toFixed(2)),
+    width: Number(placement.width.toFixed(2)),
+    height: Number(placement.height.toFixed(2)),
+  };
+}
+
+function serializeArmoryPlacements() {
+  return JSON.stringify(
+    Object.fromEntries(
+      ARMORY_ITEMS.map((item) => {
+        const placement = armoryPlacements[item.id] ?? item.frame;
+        return [item.id, normalizeArmoryPlacement(placement)];
+      }),
+    ),
+    null,
+    2,
+  );
+}
+
+function refreshArmoryPlacementTranscript() {
+  if (!armoryEditorJson) {
+    return;
+  }
+
+  armoryEditorJson.value = `${serializeArmoryPlacements()}\n`;
+}
+
+function exportArmoryPlacementsJson() {
+  const downloadLink = document.createElement("a");
+  const jsonBlob = new Blob([`${serializeArmoryPlacements()}\n`], {
+    type: "application/json",
+  });
+  const downloadUrl = URL.createObjectURL(jsonBlob);
+
+  downloadLink.href = downloadUrl;
+  downloadLink.download = ARMORY_EXPORT_FILE_NAME;
+  downloadLink.click();
+
+  window.setTimeout(() => {
+    URL.revokeObjectURL(downloadUrl);
+  }, 0);
+}
+
 function loadArmoryPlacements() {
   const defaults = getDefaultArmoryPlacements();
 
@@ -616,6 +665,7 @@ function loadArmoryPlacements() {
   }
 
   armoryPlacements = defaults;
+  refreshArmoryPlacementTranscript();
 }
 
 function saveArmoryPlacements() {
@@ -645,6 +695,7 @@ function resetArmoryPlacements() {
   try {
     localStorage.removeItem(ARMORY_STORAGE_KEY);
   } catch {}
+  refreshArmoryPlacementTranscript();
   layoutArmoryHotspots();
   updateArmoryEditorStatus();
 }
@@ -920,6 +971,7 @@ function scaleSelectedArmoryItem(factor) {
     width: nextWidth,
     height: nextHeight,
   };
+  refreshArmoryPlacementTranscript();
   layoutArmoryHotspots();
 }
 
@@ -1010,6 +1062,7 @@ function handleArmoryPointerMove(event) {
 
   placement.x = point.x - armoryEditorState.dragOffsetX;
   placement.y = point.y - armoryEditorState.dragOffsetY;
+  refreshArmoryPlacementTranscript();
   layoutArmoryHotspots();
 }
 
@@ -1061,6 +1114,7 @@ function nudgeSelectedArmoryItem(key, multiplier) {
     return false;
   }
 
+  refreshArmoryPlacementTranscript();
   layoutArmoryHotspots();
   return true;
 }
@@ -1554,8 +1608,14 @@ armoryModal?.querySelector(".armory-modal__scrim")?.addEventListener("click", ()
 
 armoryEditorSave?.addEventListener("click", () => {
   saveArmoryPlacements();
-  showArmoryToast("Sagome salvate");
+  refreshArmoryPlacementTranscript();
+  showArmoryToast("Sagome salvate in locale");
   exitArmoryEditor();
+});
+
+armoryEditorExport?.addEventListener("click", () => {
+  exportArmoryPlacementsJson();
+  showArmoryToast("JSON coordinate scaricato");
 });
 
 armoryEditorReset?.addEventListener("click", () => {

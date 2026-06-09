@@ -274,6 +274,7 @@ body {
   bottom: max(0.85rem, 1.8vh);
   z-index: 18;
   display: flex;
+  flex-wrap: wrap;
   gap: 0.8rem;
   align-items: center;
   justify-content: center;
@@ -329,6 +330,12 @@ body {
   align-items: center;
 }
 
+.armory-editor__transcript {
+  display: grid;
+  flex: 1 1 100%;
+  gap: 0.38rem;
+}
+
 .armory-editor__button,
 .hal-login__button {
   min-height: 34px;
@@ -348,6 +355,25 @@ body {
 .armory-editor__button:focus-visible,
 .hal-login__button:hover,
 .hal-login__button:focus-visible {
+  border-color: rgba(143, 228, 255, 0.42);
+  outline: none;
+}
+
+.armory-editor__json {
+  width: 100%;
+  min-height: 138px;
+  padding: 0.72rem 0.78rem;
+  border: 1px solid rgba(145, 224, 255, 0.12);
+  border-radius: 12px;
+  color: rgba(208, 238, 255, 0.88);
+  background: rgba(5, 13, 21, 0.86);
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 0.63rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.armory-editor__json:focus-visible {
   border-color: rgba(143, 228, 255, 0.42);
   outline: none;
 }
@@ -1522,6 +1548,11 @@ body {
   .armory-editor__button {
     flex: 1 1 auto;
     min-width: 72px;
+  }
+
+  .armory-editor__json {
+    min-height: 124px;
+    font-size: 0.59rem;
   }
 
   .armory-modal {
