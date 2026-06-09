@@ -1,4 +1,9 @@
 {
+  "counts": {
+    "items": 10,
+    "shadows": 3,
+    "flickers": 1
+  },
   "items": {
     "pistola": {
       "x": 547.5,
