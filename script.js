@@ -1245,6 +1245,7 @@ function updateRoomNavigation() {
 
   if (stasisBay) {
     stasisBay.setAttribute("aria-label", `Cella criogenica di ${activeProfile.name}`);
+    stasisBay.classList.toggle("stasis-bay--donatella", activeRoom === "donatella");
   }
 
   if (brunoFrame) {
