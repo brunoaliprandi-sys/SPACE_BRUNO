@@ -88,7 +88,8 @@
       "y": 205,
       "width": 98,
       "height": 34,
-      "slowness": 2.8
+      "slowness": 2.8,
+      "brightness": 1
     }
   ]
 }

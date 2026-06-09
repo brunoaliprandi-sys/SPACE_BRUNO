@@ -61,11 +61,15 @@ const FLICKER_DEFAULT_EFFECTS = [
     width: 98,
     height: 34,
     slowness: 2.8,
+    brightness: 1,
   },
 ];
 const FLICKER_SLOWNESS_MIN = 0.45;
 const FLICKER_SLOWNESS_MAX = 8.5;
 const FLICKER_SLOWNESS_STEP = 0.25;
+const FLICKER_BRIGHTNESS_MIN = 0.35;
+const FLICKER_BRIGHTNESS_MAX = 2.2;
+const FLICKER_BRIGHTNESS_STEP = 0.1;
 const FLICKER_DEFAULT_SIZE = {
   width: 98,
   height: 34,
@@ -212,6 +216,8 @@ const armoryEditor = document.getElementById("armory-editor");
 const armoryEditorItem = document.getElementById("armory-editor-item");
 const armoryEditorAddFlicker = document.getElementById("armory-editor-add-flicker");
 const armoryEditorRemoveFlicker = document.getElementById("armory-editor-remove-flicker");
+const armoryEditorFlickerDimmer = document.getElementById("armory-editor-flicker-dimmer");
+const armoryEditorFlickerBrighter = document.getElementById("armory-editor-flicker-brighter");
 const armoryEditorFlickerFaster = document.getElementById("armory-editor-flicker-faster");
 const armoryEditorFlickerSlower = document.getElementById("armory-editor-flicker-slower");
 const armoryEditorSave = document.getElementById("armory-editor-save");
@@ -736,6 +742,7 @@ function cloneFlickerEffect(effect) {
     width: effect.width,
     height: effect.height,
     slowness: effect.slowness,
+    brightness: effect.brightness,
   };
 }
 
@@ -769,6 +776,7 @@ function normalizeFlickerEffect(effect) {
     width: Number(effect.width.toFixed(2)),
     height: Number(effect.height.toFixed(2)),
     slowness: Number(effect.slowness.toFixed(2)),
+    brightness: Number(effect.brightness.toFixed(2)),
   };
 }
 
@@ -913,6 +921,7 @@ function loadFlickerEffects() {
           && Number.isFinite(effect.width)
           && Number.isFinite(effect.height)
           && Number.isFinite(effect.slowness)
+          && (!("brightness" in effect) || Number.isFinite(effect.brightness))
           && effect.width > 0
           && effect.height > 0
         ))
@@ -923,6 +932,11 @@ function loadFlickerEffects() {
           width: effect.width,
           height: effect.height,
           slowness: clampValue(effect.slowness, FLICKER_SLOWNESS_MIN, FLICKER_SLOWNESS_MAX),
+          brightness: clampValue(
+            Number.isFinite(effect.brightness) ? effect.brightness : 1,
+            FLICKER_BRIGHTNESS_MIN,
+            FLICKER_BRIGHTNESS_MAX,
+          ),
         }));
     } else {
       flickerEffects = defaults;
@@ -1119,7 +1133,7 @@ function getFlickerOrdinalLabel(effectId) {
 }
 
 function getFlickerTargetTitle(effect) {
-  return `LED DISTURBO ${getFlickerOrdinalLabel(effect.id)} / ${effect.slowness.toFixed(2)}s`;
+  return `LED ${getFlickerOrdinalLabel(effect.id)} / LUX ${effect.brightness.toFixed(2)} / ${effect.slowness.toFixed(2)}s`;
 }
 
 function primeFlickerRuntime(effect, timestamp = performance.now()) {
@@ -1223,6 +1237,7 @@ function layoutFlickerEffects() {
     element.style.top = `${offsetY + effect.y * scale}px`;
     element.style.width = `${effect.width * scale}px`;
     element.style.height = `${effect.height * scale}px`;
+    element.style.setProperty("--flicker-brightness", String(effect.brightness.toFixed(2)));
     element.classList.toggle("is-selected", armoryEditorState.selectedItemId === effect.id);
   }
 }
@@ -1332,6 +1347,7 @@ function createFlickerEffectDraft() {
     width: sourceEffect.width ?? FLICKER_DEFAULT_SIZE.width,
     height: sourceEffect.height ?? FLICKER_DEFAULT_SIZE.height,
     slowness: sourceEffect.slowness ?? FLICKER_DEFAULT_EFFECTS[0].slowness,
+    brightness: sourceEffect.brightness ?? 1,
   };
 }
 
@@ -1654,6 +1670,24 @@ function changeSelectedFlickerSlowness(delta) {
     FLICKER_SLOWNESS_MAX,
   );
   refreshArmoryPlacementTranscript();
+  updateArmoryEditorStatus();
+  return true;
+}
+
+function changeSelectedFlickerBrightness(delta) {
+  const target = getEditorTargetById(armoryEditorState.selectedItemId);
+
+  if (target?.kind !== "flicker") {
+    return false;
+  }
+
+  target.effect.brightness = clampValue(
+    Number((target.effect.brightness + delta).toFixed(2)),
+    FLICKER_BRIGHTNESS_MIN,
+    FLICKER_BRIGHTNESS_MAX,
+  );
+  refreshArmoryPlacementTranscript();
+  layoutFlickerEffects();
   updateArmoryEditorStatus();
   return true;
 }
@@ -2747,6 +2781,18 @@ armoryEditorAddFlicker?.addEventListener("click", () => {
 armoryEditorRemoveFlicker?.addEventListener("click", () => {
   if (!removeSelectedFlickerEffect()) {
     showArmoryToast("Seleziona un LED da rimuovere");
+  }
+});
+
+armoryEditorFlickerDimmer?.addEventListener("click", () => {
+  if (!changeSelectedFlickerBrightness(-FLICKER_BRIGHTNESS_STEP)) {
+    showArmoryToast("Seleziona un LED per regolare la luce");
+  }
+});
+
+armoryEditorFlickerBrighter?.addEventListener("click", () => {
+  if (!changeSelectedFlickerBrightness(FLICKER_BRIGHTNESS_STEP)) {
+    showArmoryToast("Seleziona un LED per regolare la luce");
   }
 });
 
