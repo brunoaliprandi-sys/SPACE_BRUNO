@@ -1424,6 +1424,10 @@ body {
   bottom: 0.8%;
 }
 
+.stasis-bay--alieno .bruno.bruno--alien-fart {
+  transform: translateX(-50%) scale(1.54);
+}
+
 .stasis-bay--occupant-hidden .bruno,
 .stasis-bay--occupant-hidden .stasis-bay__shadow {
   opacity: 0;

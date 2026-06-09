@@ -94,6 +94,7 @@ const BRUNO_WALK_FRAME_COUNT = 36;
 const BRUNO_WALK_BASE_WIDTH = 228;
 const BRUNO_WALK_FRAME_RATE = 14;
 const BRUNO_WALK_SPEED = 228;
+const ALIEN_FART_FRAME_COUNT = 36;
 const ALIEN_WALK_FRAME_COUNT = 36;
 const ALIEN_WALK_BASE_WIDTH = 210;
 const ALIEN_WALK_FRAME_RATE = 14;
@@ -344,6 +345,10 @@ const dossierModalState = {
   room: "bruno",
   tab: "bio",
 };
+const alienIdleState = {
+  variant: "idle",
+  idleLoopsUntilFart: 2,
+};
 
 if (armoryModal) {
   armoryModal.inert = true;
@@ -360,11 +365,22 @@ if (halLogin) {
   halLogin.setAttribute("inert", "");
 }
 
+resetAlienIdleState();
+
 function buildFrames(basePath, frameCount) {
   return Array.from({ length: frameCount }, (_, index) => {
     const frameId = String(index).padStart(4, "0");
     return `${basePath}/frame_${frameId}.png`;
   });
+}
+
+function chooseAlienIdleLoopBudget() {
+  return 2 + Math.floor(Math.random() * 2);
+}
+
+function resetAlienIdleState() {
+  alienIdleState.variant = "idle";
+  alienIdleState.idleLoopsUntilFart = chooseAlienIdleLoopBudget();
 }
 
 function preloadFrames(frameSources) {
@@ -391,6 +407,48 @@ const characterAnimations = Object.fromEntries(
     ];
   }),
 );
+const alienIdleAnimations = {
+  idle: characterAnimations.alieno,
+  fart: {
+    forwardFrames: buildFrames("animazioni/Alieno_1/Fart", ALIEN_FART_FRAME_COUNT),
+    frames: [],
+  },
+};
+alienIdleAnimations.fart.frames = [
+  ...alienIdleAnimations.fart.forwardFrames,
+  ...alienIdleAnimations.fart.forwardFrames.slice(1, -1).reverse(),
+];
+
+function getActiveCharacterAnimation(room = activeRoom) {
+  if (room === "alieno") {
+    return alienIdleAnimations[alienIdleState.variant] ?? alienIdleAnimations.idle;
+  }
+
+  return characterAnimations[room];
+}
+
+function advanceAlienIdleVariant() {
+  if (alienIdleState.variant === "fart") {
+    resetAlienIdleState();
+    return;
+  }
+
+  alienIdleState.idleLoopsUntilFart -= 1;
+  if (alienIdleState.idleLoopsUntilFart <= 0) {
+    alienIdleState.variant = "fart";
+  }
+}
+
+function syncActiveCharacterVariantClass() {
+  if (!brunoFrame) {
+    return;
+  }
+
+  brunoFrame.classList.toggle(
+    "bruno--alien-fart",
+    activeRoom === "alieno" && alienIdleState.variant === "fart",
+  );
+}
 
 const robotAnimations = {
   move: {
@@ -428,6 +486,7 @@ const alienWalkAnimations = {
 };
 
 preloadFrames(Object.values(characterAnimations).flatMap((animation) => animation.forwardFrames));
+preloadFrames(alienIdleAnimations.fart.forwardFrames);
 preloadFrames([
   ...robotAnimations.move.frames,
   ...robotAnimations.clean.frames,
@@ -2731,11 +2790,12 @@ function updateRoomNavigation() {
   updateAlienToggle();
   syncBrunoWalkerVisibility();
   syncAlienWalkerVisibility();
+  syncActiveCharacterVariantClass();
 
   if (brunoFrame) {
     brunoFrame.alt = activeProfile.alt;
-    brunoFrame.src = characterAnimations[activeRoom].frames[characterFrameIndex]
-      ?? characterAnimations[activeRoom].frames[0];
+    const animation = getActiveCharacterAnimation(activeRoom);
+    brunoFrame.src = animation.frames[characterFrameIndex] ?? animation.frames[0];
   }
 
   roomPrev?.classList.toggle("is-visible", Boolean(previousRoom));
@@ -2768,6 +2828,7 @@ function setActiveRoom(nextRoom) {
   activeRoom = nextRoom;
   characterFrameIndex = 0;
   characterLastFrameTime = 0;
+  resetAlienIdleState();
   updateRoomNavigation();
   playOneShot(audioTracks.uiClick, 0.12);
 }
@@ -2777,11 +2838,25 @@ function animateCharacter(timestamp) {
     characterLastFrameTime = timestamp;
   }
 
-  const frames = characterAnimations[activeRoom].frames;
+  const animation = getActiveCharacterAnimation(activeRoom);
+  const frames = animation.frames;
   const frameDuration = 1000 / CHARACTER_FRAME_RATE;
   if (timestamp - characterLastFrameTime >= frameDuration) {
-    characterFrameIndex = (characterFrameIndex + 1) % frames.length;
-    brunoFrame.src = frames[characterFrameIndex];
+    const nextFrameIndex = characterFrameIndex + 1;
+
+    if (nextFrameIndex >= frames.length) {
+      if (activeRoom === "alieno") {
+        advanceAlienIdleVariant();
+        syncActiveCharacterVariantClass();
+      }
+
+      characterFrameIndex = 0;
+      brunoFrame.src = getActiveCharacterAnimation(activeRoom).frames[0];
+    } else {
+      characterFrameIndex = nextFrameIndex;
+      brunoFrame.src = frames[characterFrameIndex];
+    }
+
     characterLastFrameTime = timestamp;
   }
 
