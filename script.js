@@ -90,6 +90,10 @@ const ROOM_SEQUENCE = ["bruno", "donatella", "alieno"];
 const ROBOT_FRAME_COUNT = 36;
 const ROBOT_BASE_WIDTH = 390;
 const ROBOT_IDLE_MODES = ["move", "clean"];
+const BRUNO_WALK_FRAME_COUNT = 36;
+const BRUNO_WALK_BASE_WIDTH = 228;
+const BRUNO_WALK_FRAME_RATE = 14;
+const BRUNO_WALK_SPEED = 228;
 const ALIEN_WALK_FRAME_COUNT = 36;
 const ALIEN_WALK_BASE_WIDTH = 210;
 const ALIEN_WALK_FRAME_RATE = 14;
@@ -301,8 +305,15 @@ const robotCleaner = document.getElementById("robot-cleaner");
 const robotFrame = document.getElementById("robot-frame");
 const robotToggle = document.getElementById("robot-toggle");
 const robotToggleHint = robotToggle?.querySelector(".hud-trigger__hint");
+const brunoToggle = document.getElementById("bruno-toggle");
+const brunoToggleHint = brunoToggle?.querySelector(".hud-trigger__hint");
+const donatellaToggle = document.getElementById("donatella-toggle");
+const donatellaToggleHint = donatellaToggle?.querySelector(".hud-trigger__hint");
 const alienToggle = document.getElementById("alien-toggle");
 const alienToggleHint = alienToggle?.querySelector(".hud-trigger__hint");
+const brunoWalkBay = document.getElementById("bruno-walk-bay");
+const brunoWalker = document.getElementById("bruno-walker");
+const brunoWalkFrame = document.getElementById("bruno-walk-frame");
 const alienWalkBay = document.getElementById("alien-walk-bay");
 const alienWalker = document.getElementById("alien-walker");
 const alienWalkFrame = document.getElementById("alien-walk-frame");
@@ -395,6 +406,16 @@ const robotAnimations = {
     fps: 10,
   },
 };
+const brunoWalkAnimations = {
+  right: {
+    frames: buildFrames("animazioni/Bruno/Walk/Dx", BRUNO_WALK_FRAME_COUNT),
+    fps: BRUNO_WALK_FRAME_RATE,
+  },
+  left: {
+    frames: buildFrames("animazioni/Bruno/Walk/Sx", BRUNO_WALK_FRAME_COUNT),
+    fps: BRUNO_WALK_FRAME_RATE,
+  },
+};
 const alienWalkAnimations = {
   right: {
     frames: buildFrames("animazioni/Alieno_1/Walk/dx", ALIEN_WALK_FRAME_COUNT),
@@ -410,6 +431,10 @@ preloadFrames(Object.values(characterAnimations).flatMap((animation) => animatio
 preloadFrames([
   ...robotAnimations.move.frames,
   ...robotAnimations.clean.frames,
+]);
+preloadFrames([
+  ...brunoWalkAnimations.right.frames,
+  ...brunoWalkAnimations.left.frames,
 ]);
 preloadFrames([
   ...alienWalkAnimations.right.frames,
@@ -428,6 +453,16 @@ const robotState = {
   lastFrameTime: 0,
   loopsUntilModeSwap: 1,
 };
+const brunoWalkerState = {
+  visible: false,
+  position: 0,
+  minX: 0,
+  maxX: 0,
+  direction: 1,
+  frameIndex: 0,
+  lastFrameTime: 0,
+  lastMoveTime: 0,
+};
 const alienWalkerState = {
   visible: false,
   position: 0,
@@ -437,6 +472,9 @@ const alienWalkerState = {
   frameIndex: 0,
   lastFrameTime: 0,
   lastMoveTime: 0,
+};
+const brunoReleaseState = {
+  released: false,
 };
 const alienReleaseState = {
   released: false,
@@ -2368,6 +2406,92 @@ function layoutRobotBay() {
   applyRobotTransform();
 }
 
+function getBrunoWalkAnimation() {
+  return brunoWalkerState.direction >= 0
+    ? brunoWalkAnimations.right
+    : brunoWalkAnimations.left;
+}
+
+function applyBrunoWalkerTransform() {
+  if (!brunoWalker) {
+    return;
+  }
+
+  brunoWalker.style.setProperty("--bruno-walker-x", `${brunoWalkerState.position}px`);
+}
+
+function chooseBrunoSpawnX() {
+  const maxX = brunoWalkerState.maxX;
+
+  if (maxX <= 0) {
+    return 0;
+  }
+
+  return Math.random() * maxX;
+}
+
+function layoutBrunoWalkBay() {
+  if (!brunoWalkBay || !brunoWalker) {
+    return;
+  }
+
+  const {
+    scale,
+    laneLeft,
+    laneTop,
+    bayWidth,
+    bayHeight,
+  } = getCorridorLaneMetrics();
+  const previousMaxX = Math.max(1, brunoWalkerState.maxX);
+  const progress = brunoWalkerState.position / previousMaxX;
+  const brunoWidth = Math.max(
+    window.innerWidth <= 800 ? 142 : 182,
+    Math.min(window.innerWidth <= 800 ? 214 : 252, BRUNO_WALK_BASE_WIDTH * scale * 1.12),
+  );
+
+  brunoWalkBay.style.left = `${laneLeft}px`;
+  brunoWalkBay.style.top = `${laneTop}px`;
+  brunoWalkBay.style.width = `${bayWidth}px`;
+  brunoWalkBay.style.height = `${bayHeight}px`;
+  brunoWalker.style.setProperty("--bruno-walker-width", `${brunoWidth}px`);
+
+  brunoWalkerState.maxX = Math.max(0, bayWidth - brunoWidth);
+  brunoWalkerState.position = Math.min(
+    brunoWalkerState.maxX,
+    Math.max(brunoWalkerState.minX, brunoWalkerState.maxX * (Number.isFinite(progress) ? progress : 0.5)),
+  );
+  applyBrunoWalkerTransform();
+}
+
+function showBrunoWalker() {
+  if (!brunoWalkBay || !brunoWalkFrame) {
+    return;
+  }
+
+  brunoWalkerState.visible = true;
+  brunoWalkBay.classList.add("is-active");
+  brunoWalkBay.setAttribute("aria-hidden", "false");
+  brunoWalkerState.position = chooseBrunoSpawnX();
+  brunoWalkerState.direction = Math.random() < 0.5 ? -1 : 1;
+  brunoWalkerState.frameIndex = 0;
+  brunoWalkerState.lastFrameTime = 0;
+  brunoWalkerState.lastMoveTime = 0;
+  brunoWalkFrame.src = getBrunoWalkAnimation().frames[0];
+  applyBrunoWalkerTransform();
+}
+
+function hideBrunoWalker() {
+  if (!brunoWalkBay) {
+    return;
+  }
+
+  brunoWalkerState.visible = false;
+  brunoWalkerState.lastFrameTime = 0;
+  brunoWalkerState.lastMoveTime = 0;
+  brunoWalkBay.classList.remove("is-active");
+  brunoWalkBay.setAttribute("aria-hidden", "true");
+}
+
 function getAlienWalkAnimation() {
   return alienWalkerState.direction >= 0
     ? alienWalkAnimations.right
@@ -2456,13 +2580,62 @@ function hideAlienWalker() {
   syncSceneAudio();
 }
 
+function isRoomReleased(room = activeRoom) {
+  if (room === "bruno") {
+    return brunoReleaseState.released;
+  }
+
+  if (room === "alieno") {
+    return alienReleaseState.released;
+  }
+
+  return false;
+}
+
 function syncStasisOccupantVisibility() {
   if (!stasisBay) {
     return;
   }
 
-  const isOccupantHidden = activeRoom === "alieno" && alienReleaseState.released;
+  const isOccupantHidden = isRoomReleased(activeRoom);
   stasisBay.classList.toggle("stasis-bay--occupant-hidden", isOccupantHidden);
+}
+
+function updateBrunoToggle() {
+  if (!brunoToggle || !brunoToggleHint) {
+    return;
+  }
+
+  const isBrunoRoomActive = activeRoom === "bruno";
+  const isReleased = brunoReleaseState.released;
+
+  brunoToggle.hidden = !isBrunoRoomActive;
+  brunoToggle.setAttribute("aria-hidden", String(!isBrunoRoomActive));
+  brunoToggle.setAttribute("aria-pressed", String(isReleased));
+  brunoToggle.setAttribute(
+    "aria-label",
+    isReleased
+      ? "Richiama Bruno nella cella criogenica"
+      : "Libera Bruno dalla cella criogenica",
+  );
+  brunoToggleHint.textContent = isReleased ? "RICHIAMA UNITÀ" : "LIBERA UNITÀ";
+}
+
+function updateDonatellaToggle() {
+  if (!donatellaToggle || !donatellaToggleHint) {
+    return;
+  }
+
+  const isDonatellaRoomActive = activeRoom === "donatella";
+
+  donatellaToggle.hidden = !isDonatellaRoomActive;
+  donatellaToggle.setAttribute("aria-hidden", String(!isDonatellaRoomActive));
+  donatellaToggle.setAttribute("aria-pressed", "false");
+  donatellaToggle.setAttribute(
+    "aria-label",
+    "Animazione di rilascio di Donatella disponibile nella fase 2",
+  );
+  donatellaToggleHint.textContent = "WALK FASE 2";
 }
 
 function updateAlienToggle() {
@@ -2483,6 +2656,19 @@ function updateAlienToggle() {
       : "Libera alieno dalla cella criogenica",
   );
   alienToggleHint.textContent = isReleased ? "CONTIENI XENO" : "LIBERA XENO";
+}
+
+function syncBrunoWalkerVisibility() {
+  if (activeRoom === "bruno" && brunoReleaseState.released) {
+    if (!brunoWalkerState.visible) {
+      showBrunoWalker();
+    }
+    return;
+  }
+
+  if (brunoWalkerState.visible) {
+    hideBrunoWalker();
+  }
 }
 
 function syncAlienWalkerVisibility() {
@@ -2506,15 +2692,19 @@ function resolveInitialRoom() {
   return CHARACTER_PROFILES[requestedRoom] ? requestedRoom : "bruno";
 }
 
-function resolveInitialAlienReleased() {
-  const alienMode = new URLSearchParams(window.location.search).get("alien");
-  const normalizedMode = (alienMode || "").trim().toLowerCase();
+function resolveInitialReleased(...paramNames) {
+  const searchParams = new URLSearchParams(window.location.search);
+  const releaseMode = paramNames
+    .map((paramName) => searchParams.get(paramName))
+    .find((value) => value !== null);
+  const normalizedMode = (releaseMode || "").trim().toLowerCase();
 
   return ["1", "free", "released", "libero", "walk"].includes(normalizedMode);
 }
 
 let activeRoom = resolveInitialRoom();
-alienReleaseState.released = resolveInitialAlienReleased();
+brunoReleaseState.released = resolveInitialReleased("bruno");
+alienReleaseState.released = resolveInitialReleased("alien", "alieno");
 let characterFrameIndex = 0;
 let characterLastFrameTime = 0;
 
@@ -2536,7 +2726,10 @@ function updateRoomNavigation() {
   applyCharacterShadowPlacement();
   updateDossierTrigger();
   syncStasisOccupantVisibility();
+  updateBrunoToggle();
+  updateDonatellaToggle();
   updateAlienToggle();
+  syncBrunoWalkerVisibility();
   syncAlienWalkerVisibility();
 
   if (brunoFrame) {
@@ -2692,6 +2885,25 @@ function toggleRobot() {
   showRobot();
 }
 
+function setBrunoReleased(nextReleased) {
+  if (brunoReleaseState.released === nextReleased) {
+    updateBrunoToggle();
+    syncStasisOccupantVisibility();
+    syncBrunoWalkerVisibility();
+    return;
+  }
+
+  brunoReleaseState.released = nextReleased;
+  updateBrunoToggle();
+  syncStasisOccupantVisibility();
+  syncBrunoWalkerVisibility();
+  playOneShot(audioTracks.uiClick, nextReleased ? 0.16 : 0.12);
+}
+
+function toggleBrunoRelease() {
+  setBrunoReleased(!brunoReleaseState.released);
+}
+
 function setAlienReleased(nextReleased) {
   if (alienReleaseState.released === nextReleased) {
     updateAlienToggle();
@@ -2744,6 +2956,49 @@ function animateRobot(timestamp) {
   }
 
   window.requestAnimationFrame(animateRobot);
+}
+
+function animateBrunoWalker(timestamp) {
+  if (brunoWalkerState.visible && brunoWalkFrame) {
+    if (!brunoWalkerState.lastMoveTime) {
+      brunoWalkerState.lastMoveTime = timestamp;
+    }
+
+    const moveDelta = timestamp - brunoWalkerState.lastMoveTime;
+    brunoWalkerState.lastMoveTime = timestamp;
+
+    if (brunoWalkerState.maxX > 0) {
+      brunoWalkerState.position += (BRUNO_WALK_SPEED * moveDelta * brunoWalkerState.direction) / 1000;
+
+      if (brunoWalkerState.position <= brunoWalkerState.minX) {
+        brunoWalkerState.position = brunoWalkerState.minX;
+        brunoWalkerState.direction = 1;
+        brunoWalkerState.frameIndex = 0;
+        brunoWalkFrame.src = brunoWalkAnimations.right.frames[0];
+      } else if (brunoWalkerState.position >= brunoWalkerState.maxX) {
+        brunoWalkerState.position = brunoWalkerState.maxX;
+        brunoWalkerState.direction = -1;
+        brunoWalkerState.frameIndex = 0;
+        brunoWalkFrame.src = brunoWalkAnimations.left.frames[0];
+      }
+
+      applyBrunoWalkerTransform();
+    }
+
+    if (!brunoWalkerState.lastFrameTime) {
+      brunoWalkerState.lastFrameTime = timestamp;
+    }
+
+    const animation = getBrunoWalkAnimation();
+    const frameDuration = 1000 / animation.fps;
+    if (timestamp - brunoWalkerState.lastFrameTime >= frameDuration) {
+      brunoWalkerState.frameIndex = (brunoWalkerState.frameIndex + 1) % animation.frames.length;
+      brunoWalkFrame.src = animation.frames[brunoWalkerState.frameIndex];
+      brunoWalkerState.lastFrameTime = timestamp;
+    }
+  }
+
+  window.requestAnimationFrame(animateBrunoWalker);
 }
 
 function animateAlienWalker(timestamp) {
@@ -2909,6 +3164,15 @@ dossierTrigger?.addEventListener("click", () => {
   }
 
   openDossierModal(activeRoom, dossierTrigger);
+});
+
+brunoToggle?.addEventListener("click", () => {
+  toggleBrunoRelease();
+});
+
+donatellaToggle?.addEventListener("click", () => {
+  playOneShot(audioTracks.uiClick, 0.12);
+  showArmoryToast("Walk Donatella in preparazione");
 });
 
 alienToggle?.addEventListener("click", () => {
@@ -3128,6 +3392,7 @@ buildArmoryHotspots();
 layoutArmoryHotspots();
 layoutStasisBay();
 layoutRobotBay();
+layoutBrunoWalkBay();
 layoutAlienWalkBay();
 layoutHud();
 setupHudTelemetry();
@@ -3139,10 +3404,12 @@ window.addEventListener("resize", () => {
   layoutArmoryHotspots();
   layoutStasisBay();
   layoutRobotBay();
+  layoutBrunoWalkBay();
   layoutAlienWalkBay();
   layoutHud();
 });
 window.requestAnimationFrame(animateCharacter);
 window.requestAnimationFrame(animateRobot);
+window.requestAnimationFrame(animateBrunoWalker);
 window.requestAnimationFrame(animateAlienWalker);
 window.requestAnimationFrame(animateFlickerEffects);

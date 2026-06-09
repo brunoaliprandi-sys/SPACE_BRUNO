@@ -1061,6 +1061,7 @@ body {
 }
 
 .robot-bay,
+.bruno-walk-bay,
 .alien-walk-bay {
   position: absolute;
   pointer-events: none;
@@ -1072,15 +1073,18 @@ body {
   z-index: 6;
 }
 
+.bruno-walk-bay,
 .alien-walk-bay {
   z-index: 6;
 }
 
 .robot-bay.is-active,
+.bruno-walk-bay.is-active,
 .alien-walk-bay.is-active {
   opacity: 1;
 }
 
+.bruno-walk-bay.is-active,
 .alien-walk-bay.is-active {
   z-index: 17;
 }
@@ -1128,6 +1132,50 @@ body {
   );
   transform: translateX(-50%);
   filter: blur(4px);
+}
+
+.bruno-walker {
+  --bruno-walker-x: 0px;
+  --bruno-walker-width: 228px;
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: var(--bruno-walker-width);
+  transform: translate3d(var(--bruno-walker-x), 0, 0);
+  transform-origin: center bottom;
+  will-change: transform;
+}
+
+.bruno-walker__sprite {
+  display: block;
+  width: 100%;
+  height: auto;
+  transform: translateY(-14px) scale(1.06);
+  transform-origin: center bottom;
+  filter:
+    brightness(0.9)
+    saturate(0.95)
+    contrast(1.04)
+    drop-shadow(0 0 10px rgba(130, 208, 255, 0.08))
+    drop-shadow(0 10px 18px rgba(0, 0, 0, 0.28));
+}
+
+.bruno-walker__shadow {
+  position: absolute;
+  left: 50%;
+  bottom: 2px;
+  width: 54%;
+  height: 15px;
+  border-radius: 999px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0, 0, 0, 0.54) 0%,
+    rgba(0, 0, 0, 0.34) 38%,
+    rgba(0, 0, 0, 0.1) 70%,
+    transparent 100%
+  );
+  transform: translateX(-50%);
+  filter: blur(3px);
 }
 
 .alien-walker {
@@ -1442,6 +1490,10 @@ body {
   pointer-events: auto;
 }
 
+.stasis-bay__controls .hud-trigger[hidden] {
+  display: none !important;
+}
+
 .hud-footer {
   inset: auto 0 0;
   height: clamp(210px, 27vh, 280px);
@@ -1638,6 +1690,32 @@ body {
     drop-shadow(0 0 10px rgba(255, 138, 92, 0.36));
 }
 
+.hud-trigger__icon-image--bruno-release {
+  filter:
+    brightness(0)
+    saturate(100%)
+    invert(86%)
+    sepia(18%)
+    saturate(1224%)
+    hue-rotate(165deg)
+    brightness(105%)
+    contrast(104%)
+    drop-shadow(0 0 10px rgba(132, 222, 255, 0.34));
+}
+
+.hud-trigger__icon-image--donatella-release {
+  filter:
+    brightness(0)
+    saturate(100%)
+    invert(87%)
+    sepia(23%)
+    saturate(1207%)
+    hue-rotate(92deg)
+    brightness(106%)
+    contrast(103%)
+    drop-shadow(0 0 10px rgba(115, 255, 195, 0.32));
+}
+
 .hud-trigger__icon-image--dossier {
   filter:
     brightness(0)
@@ -1690,6 +1768,20 @@ body {
     0 0 24px rgba(255, 138, 92, 0.12);
 }
 
+.hud-trigger--bruno-release {
+  border-color: rgba(132, 222, 255, 0.28);
+  box-shadow:
+    inset 0 0 0 1px rgba(132, 222, 255, 0.08),
+    0 0 24px rgba(132, 222, 255, 0.12);
+}
+
+.hud-trigger--donatella-release {
+  border-color: rgba(115, 255, 195, 0.24);
+  box-shadow:
+    inset 0 0 0 1px rgba(115, 255, 195, 0.08),
+    0 0 24px rgba(115, 255, 195, 0.1);
+}
+
 .hud-trigger--dossier {
   border-color: rgba(124, 230, 255, 0.28);
   box-shadow:
@@ -1737,6 +1829,15 @@ body {
     0 0 28px rgba(255, 138, 92, 0.2);
 }
 
+.hud-trigger--bruno-release[aria-pressed="true"] {
+  background:
+    linear-gradient(180deg, rgba(12, 30, 40, 0.88), rgba(7, 13, 20, 0.72)),
+    linear-gradient(90deg, rgba(132, 222, 255, 0.1), transparent 42%);
+  box-shadow:
+    inset 0 0 0 1px rgba(132, 222, 255, 0.16),
+    0 0 28px rgba(132, 222, 255, 0.18);
+}
+
 .hud-trigger--dossier[aria-expanded="true"] {
   background:
     linear-gradient(180deg, rgba(12, 34, 42, 0.88), rgba(6, 14, 20, 0.72)),
@@ -1776,6 +1877,22 @@ body {
     inset 0 1px 0 rgba(255, 188, 146, 0.14),
     inset 0 0 0 1px rgba(255, 138, 92, 0.06),
     0 0 12px rgba(255, 138, 92, 0.1);
+}
+
+.hud-trigger--embedded.hud-trigger--bruno-release {
+  border-color: transparent;
+  box-shadow:
+    inset 0 1px 0 rgba(173, 242, 255, 0.14),
+    inset 0 0 0 1px rgba(132, 222, 255, 0.06),
+    0 0 12px rgba(132, 222, 255, 0.1);
+}
+
+.hud-trigger--embedded.hud-trigger--donatella-release {
+  border-color: transparent;
+  box-shadow:
+    inset 0 1px 0 rgba(176, 255, 221, 0.14),
+    inset 0 0 0 1px rgba(115, 255, 195, 0.06),
+    0 0 12px rgba(115, 255, 195, 0.1);
 }
 
 .hud-trigger--embedded.hud-trigger--dossier {
@@ -1824,6 +1941,16 @@ body {
     inset 0 1px 0 rgba(255, 188, 146, 0.24),
     inset 0 0 0 1px rgba(255, 138, 92, 0.08),
     0 0 16px rgba(255, 138, 92, 0.18);
+}
+
+.hud-trigger--embedded.hud-trigger--bruno-release[aria-pressed="true"] {
+  background:
+    linear-gradient(180deg, rgba(18, 40, 52, 0.4), rgba(8, 14, 24, 0.18)),
+    linear-gradient(135deg, rgba(132, 222, 255, 0.16), transparent 58%);
+  box-shadow:
+    inset 0 1px 0 rgba(173, 242, 255, 0.22),
+    inset 0 0 0 1px rgba(132, 222, 255, 0.08),
+    0 0 16px rgba(132, 222, 255, 0.16);
 }
 
 .hud-trigger--embedded.hud-trigger--dossier[aria-expanded="true"] {

@@ -160,6 +160,44 @@
             </button>
 
             <button
+              class="hud-trigger hud-trigger--bruno-release hud-trigger--embedded"
+              id="bruno-toggle"
+              type="button"
+              aria-pressed="false"
+              aria-label="Libera Bruno dalla cella criogenica"
+              hidden
+            >
+              <img
+                class="hud-trigger__icon-image hud-trigger__icon-image--bruno-release"
+                src="assets/icons/bruno-release.svg"
+                alt=""
+                aria-hidden="true"
+                decoding="async"
+              >
+              <span class="hud-trigger__label">Bruno</span>
+              <span class="hud-trigger__hint">LIBERA UNITÀ</span>
+            </button>
+
+            <button
+              class="hud-trigger hud-trigger--donatella-release hud-trigger--embedded"
+              id="donatella-toggle"
+              type="button"
+              aria-pressed="false"
+              aria-label="Animazione di rilascio di Donatella disponibile nella fase 2"
+              hidden
+            >
+              <img
+                class="hud-trigger__icon-image hud-trigger__icon-image--donatella-release"
+                src="assets/icons/donatella-release.svg"
+                alt=""
+                aria-hidden="true"
+                decoding="async"
+              >
+              <span class="hud-trigger__label">Donatella</span>
+              <span class="hud-trigger__hint">WALK FASE 2</span>
+            </button>
+
+            <button
               class="hud-trigger hud-trigger--alien hud-trigger--embedded"
               id="alien-toggle"
               type="button"
@@ -211,6 +249,23 @@
             class="robot-cleaner__sprite"
             src="animazioni/Robot_pulizie/Pulisce_fermo/frame_0000.png"
             alt="Robot pulizie in pattugliamento sotto la cella criogenica"
+            decoding="async"
+          >
+        </div>
+      </section>
+
+      <section
+        class="bruno-walk-bay"
+        id="bruno-walk-bay"
+        aria-hidden="true"
+      >
+        <div class="bruno-walker" id="bruno-walker">
+          <div class="bruno-walker__shadow" aria-hidden="true"></div>
+          <img
+            id="bruno-walk-frame"
+            class="bruno-walker__sprite"
+            src="animazioni/Bruno/Walk/Dx/frame_0000.png"
+            alt="Bruno in pattugliamento nel corridoio"
             decoding="async"
           >
         </div>
