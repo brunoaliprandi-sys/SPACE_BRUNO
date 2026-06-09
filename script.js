@@ -1248,6 +1248,13 @@ function saveFlickerEffects() {
   } catch {}
 }
 
+function persistArmoryEditorState() {
+  saveArmoryPlacements();
+  saveShadowPlacements();
+  saveFlickerEffects();
+  saveArmoryScene();
+}
+
 function showArmoryToast(message) {
   if (!armoryToast) {
     return;
@@ -1724,6 +1731,7 @@ function addFlickerEffect() {
   flickerEffects.push(nextEffect);
   syncFlickerElements();
   refreshArmoryPlacementTranscript();
+  persistArmoryEditorState();
   layoutFlickerEffects();
   selectArmoryEditorItem({
     kind: "flicker",
@@ -2060,6 +2068,7 @@ function scaleSelectedArmoryItem(factor) {
     target.effect.x = centerX - nextWidth / 2;
     target.effect.y = centerY - nextHeight / 2;
     refreshArmoryPlacementTranscript();
+    persistArmoryEditorState();
     layoutFlickerEffects();
     updateArmoryEditorStatus();
     return;
@@ -2086,6 +2095,7 @@ function scaleSelectedArmoryItem(factor) {
       boundsHeight: metrics.boundsHeight,
     });
     refreshArmoryPlacementTranscript();
+    persistArmoryEditorState();
     applyCharacterShadowPlacement();
     return;
   }
@@ -2103,6 +2113,7 @@ function scaleSelectedArmoryItem(factor) {
     height: nextHeight,
   };
   refreshArmoryPlacementTranscript();
+  persistArmoryEditorState();
   layoutArmoryHotspots();
 }
 
@@ -2123,6 +2134,7 @@ function removeSelectedFlickerEffect() {
   flickerRuntime.delete(target.id);
   syncFlickerElements();
   refreshArmoryPlacementTranscript();
+  persistArmoryEditorState();
   selectArmoryEditorItem(null);
   showArmoryToast("LED disturbo rimosso");
   return true;
@@ -2141,6 +2153,7 @@ function changeSelectedFlickerSlowness(delta) {
     FLICKER_SLOWNESS_MAX,
   );
   refreshArmoryPlacementTranscript();
+  persistArmoryEditorState();
   updateArmoryEditorStatus();
   return true;
 }
@@ -2158,6 +2171,7 @@ function changeSelectedFlickerBrightness(delta) {
     FLICKER_BRIGHTNESS_MAX,
   );
   refreshArmoryPlacementTranscript();
+  persistArmoryEditorState();
   layoutFlickerEffects();
   updateArmoryEditorStatus();
   return true;
@@ -2346,6 +2360,7 @@ function handleArmoryPointerMove(event) {
       boundsHeight: metrics.boundsHeight,
     });
     refreshArmoryPlacementTranscript();
+    persistArmoryEditorState();
     applyCharacterShadowPlacement();
     return;
   }
@@ -2356,6 +2371,7 @@ function handleArmoryPointerMove(event) {
     target.effect.x = point.x - armoryEditorState.dragOffsetX;
     target.effect.y = point.y - armoryEditorState.dragOffsetY;
     refreshArmoryPlacementTranscript();
+    persistArmoryEditorState();
     layoutFlickerEffects();
     return;
   }
@@ -2366,6 +2382,7 @@ function handleArmoryPointerMove(event) {
   placement.x = point.x - armoryEditorState.dragOffsetX;
   placement.y = point.y - armoryEditorState.dragOffsetY;
   refreshArmoryPlacementTranscript();
+  persistArmoryEditorState();
   layoutArmoryHotspots();
 }
 
@@ -2475,6 +2492,7 @@ function nudgeSelectedArmoryItem(key, multiplier) {
       boundsHeight: metrics.boundsHeight,
     });
     refreshArmoryPlacementTranscript();
+    persistArmoryEditorState();
     applyCharacterShadowPlacement();
     return true;
   }
@@ -2493,6 +2511,7 @@ function nudgeSelectedArmoryItem(key, multiplier) {
     }
 
     refreshArmoryPlacementTranscript();
+    persistArmoryEditorState();
     layoutFlickerEffects();
     return true;
   }
@@ -2512,6 +2531,7 @@ function nudgeSelectedArmoryItem(key, multiplier) {
   }
 
   refreshArmoryPlacementTranscript();
+  persistArmoryEditorState();
   layoutArmoryHotspots();
   return true;
 }

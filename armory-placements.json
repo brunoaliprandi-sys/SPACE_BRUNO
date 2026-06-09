@@ -2,99 +2,126 @@
   "counts": {
     "items": 10,
     "shadows": 3,
-    "flickers": 1
+    "flickers": 4
   },
   "items": {
     "pistola": {
-      "x": 547.5,
-      "y": 249.5,
+      "x": 544.89,
+      "y": 233.82,
       "width": 112.9,
       "height": 112.9
     },
     "coltello": {
-      "x": 584.2,
-      "y": 296.9,
+      "x": 574.62,
+      "y": 283.84,
       "width": 99.5,
       "height": 99.5
     },
     "guanti": {
-      "x": 536.6,
-      "y": 353.5,
-      "width": 116,
-      "height": 116
+      "x": 537.5,
+      "y": 337.85,
+      "width": 98.52,
+      "height": 98.52
     },
     "borsa": {
-      "x": 566,
-      "y": 568,
+      "x": 558.16,
+      "y": 534.04,
       "width": 104,
       "height": 104
     },
     "granata-1": {
-      "x": 547.9,
-      "y": 514.7,
-      "width": 89.7,
-      "height": 89.7
+      "x": 553.82,
+      "y": 490.14,
+      "width": 67.4,
+      "height": 67.4
     },
     "flash-bang": {
-      "x": 583.6,
-      "y": 506.2,
-      "width": 105.5,
-      "height": 105.5
+      "x": 589.59,
+      "y": 486.93,
+      "width": 76.11,
+      "height": 76.11
     },
     "caricatore-1": {
-      "x": 557.4,
-      "y": 647.9,
+      "x": 554.79,
+      "y": 631.35,
       "width": 57.5,
       "height": 86.3
     },
     "caricatore-2": {
-      "x": 1043,
-      "y": 636.1,
-      "width": 68.3,
-      "height": 102.4
+      "x": 1049.89,
+      "y": 636.85,
+      "width": 58.01,
+      "height": 86.97
     },
     "fucile-1": {
-      "x": 922.1,
-      "y": 251.3,
-      "width": 255.5,
-      "height": 340.7
+      "x": 925.53,
+      "y": 233.23,
+      "width": 253.87,
+      "height": 338.52
     },
     "granata-2": {
-      "x": 1044.6,
-      "y": 581.5,
-      "width": 78,
-      "height": 78
+      "x": 1043.49,
+      "y": 581.26,
+      "width": 61.06,
+      "height": 61.06
     }
   },
   "shadows": {
     "bruno": {
-      "left": 50,
-      "bottom": 0.8,
-      "width": 52,
-      "height": 16
+      "left": 53.66,
+      "bottom": -1.2,
+      "width": 189.72,
+      "height": 58.37
     },
     "donatella": {
-      "left": 50,
-      "bottom": 0.95,
-      "width": 34,
-      "height": 13
+      "left": 51.37,
+      "bottom": -1.36,
+      "width": 114.69,
+      "height": 43.85
     },
     "alieno": {
-      "left": 50,
-      "bottom": 0.7,
-      "width": 48,
-      "height": 15
+      "left": 52.74,
+      "bottom": -3.5,
+      "width": 239.67,
+      "height": 74.89
     }
   },
   "flickers": [
     {
       "id": "led-flicker-1",
-      "x": 158,
-      "y": 205,
-      "width": 98,
-      "height": 34,
-      "slowness": 2.8,
-      "brightness": 1
+      "x": 395.01,
+      "y": 295.54,
+      "width": 55.34,
+      "height": 19.2,
+      "slowness": 3.05,
+      "brightness": 0.35
+    },
+    {
+      "id": "led-flicker-2",
+      "x": 1232.63,
+      "y": 294.58,
+      "width": 55.34,
+      "height": 19.2,
+      "slowness": 3.05,
+      "brightness": 0.35
+    },
+    {
+      "id": "led-flicker-3",
+      "x": 594.95,
+      "y": 748.69,
+      "width": 28,
+      "height": 12,
+      "slowness": 3.05,
+      "brightness": 0.75
+    },
+    {
+      "id": "led-flicker-4",
+      "x": 1053.59,
+      "y": 750.84,
+      "width": 28,
+      "height": 12,
+      "slowness": 3.05,
+      "brightness": 0.65
     }
   ]
 }
