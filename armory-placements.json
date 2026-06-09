@@ -1,62 +1,84 @@
 {
-  "pistola": {
-    "x": 547.5,
-    "y": 249.5,
-    "width": 112.9,
-    "height": 112.9
+  "items": {
+    "pistola": {
+      "x": 547.5,
+      "y": 249.5,
+      "width": 112.9,
+      "height": 112.9
+    },
+    "coltello": {
+      "x": 584.2,
+      "y": 296.9,
+      "width": 99.5,
+      "height": 99.5
+    },
+    "guanti": {
+      "x": 536.6,
+      "y": 353.5,
+      "width": 116,
+      "height": 116
+    },
+    "borsa": {
+      "x": 566,
+      "y": 568,
+      "width": 104,
+      "height": 104
+    },
+    "granata-1": {
+      "x": 547.9,
+      "y": 514.7,
+      "width": 89.7,
+      "height": 89.7
+    },
+    "flash-bang": {
+      "x": 583.6,
+      "y": 506.2,
+      "width": 105.5,
+      "height": 105.5
+    },
+    "caricatore-1": {
+      "x": 557.4,
+      "y": 647.9,
+      "width": 57.5,
+      "height": 86.3
+    },
+    "caricatore-2": {
+      "x": 1043,
+      "y": 636.1,
+      "width": 68.3,
+      "height": 102.4
+    },
+    "fucile-1": {
+      "x": 922.1,
+      "y": 251.3,
+      "width": 255.5,
+      "height": 340.7
+    },
+    "granata-2": {
+      "x": 1044.6,
+      "y": 581.5,
+      "width": 78,
+      "height": 78
+    }
   },
-  "coltello": {
-    "x": 584.2,
-    "y": 296.9,
-    "width": 99.5,
-    "height": 99.5
-  },
-  "guanti": {
-    "x": 536.6,
-    "y": 353.5,
-    "width": 116,
-    "height": 116
-  },
-  "borsa": {
-    "x": 566,
-    "y": 568,
-    "width": 104,
-    "height": 104
-  },
-  "granata-1": {
-    "x": 547.9,
-    "y": 514.7,
-    "width": 89.7,
-    "height": 89.7
-  },
-  "flash-bang": {
-    "x": 583.6,
-    "y": 506.2,
-    "width": 105.5,
-    "height": 105.5
-  },
-  "caricatore-1": {
-    "x": 557.4,
-    "y": 647.9,
-    "width": 57.5,
-    "height": 86.3
-  },
-  "caricatore-2": {
-    "x": 1043,
-    "y": 636.1,
-    "width": 68.3,
-    "height": 102.4
-  },
-  "fucile-1": {
-    "x": 922.1,
-    "y": 251.3,
-    "width": 255.5,
-    "height": 340.7
-  },
-  "granata-2": {
-    "x": 1044.6,
-    "y": 581.5,
-    "width": 78,
-    "height": 78
+  "shadows": {
+    "bruno": {
+      "left": 50,
+      "bottom": 0.8,
+      "width": 52,
+      "height": 16
+    },
+    "donatella": {
+      "left": 50,
+      "bottom": 0.95,
+      "width": 34,
+      "height": 13
+    },
+    "alieno": {
+      "left": 50,
+      "bottom": 0.7,
+      "width": 48,
+      "height": 15
+    }
   }
 }

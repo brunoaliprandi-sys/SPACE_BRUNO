@@ -275,11 +275,11 @@ body {
   z-index: 18;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.8rem;
+  gap: 0.65rem;
   align-items: center;
   justify-content: center;
-  max-width: min(94vw, 760px);
-  padding: 0.72rem 0.82rem;
+  width: min(94vw, 700px);
+  padding: 0.62rem 0.74rem;
   border: 1px solid rgba(255, 90, 102, 0.24);
   border-radius: 16px;
   color: var(--text);
@@ -306,7 +306,7 @@ body {
 .armory-editor__status {
   display: grid;
   gap: 0.18rem;
-  min-width: 190px;
+  min-width: 172px;
 }
 
 .armory-editor__eyebrow {
@@ -331,9 +331,26 @@ body {
 }
 
 .armory-editor__transcript {
-  display: grid;
-  flex: 1 1 100%;
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 0.55rem);
+  display: none;
+  width: min(94vw, 700px);
   gap: 0.38rem;
+  padding: 0.72rem 0.76rem;
+  border: 1px solid rgba(255, 90, 102, 0.22);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(20, 16, 25, 0.96), rgba(4, 10, 18, 0.92)),
+    linear-gradient(90deg, rgba(255, 90, 102, 0.06), transparent 60%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 14px 28px rgba(0, 0, 0, 0.36);
+  transform: translateX(-50%);
+}
+
+.armory-editor__transcript.is-open {
+  display: grid;
 }
 
 .armory-editor__button,
@@ -361,7 +378,8 @@ body {
 
 .armory-editor__json {
   width: 100%;
-  min-height: 138px;
+  min-height: 172px;
+  max-height: min(34vh, 280px);
   padding: 0.72rem 0.78rem;
   border: 1px solid rgba(145, 224, 255, 0.12);
   border-radius: 12px;
@@ -755,19 +773,64 @@ body {
 }
 
 .stasis-bay {
+  --character-shadow-width: 52%;
+  --character-shadow-height: 16%;
+  --character-shadow-left: 50%;
+  --character-shadow-bottom: 0.8%;
+  --character-shadow-handle-bottom: 7.5%;
+  --character-shadow-contact-width: 50%;
+  --character-shadow-contact-height: 44%;
+  --character-shadow-opacity: 0.82;
+  --character-shadow-blur: 1.6px;
+  --character-shadow-perspective: 260px;
+  --character-shadow-tilt: 74deg;
   z-index: 4;
   pointer-events: none;
 }
 
-.robot-bay {
-  z-index: 7;
+.stasis-bay--donatella {
+  --character-shadow-width: 34%;
+  --character-shadow-height: 13%;
+  --character-shadow-contact-width: 46%;
+  --character-shadow-contact-height: 40%;
+  --character-shadow-bottom: 0.95%;
+  --character-shadow-opacity: 0.78;
+  --character-shadow-blur: 1.1px;
+}
+
+.stasis-bay--alieno {
+  --character-shadow-width: 48%;
+  --character-shadow-height: 15%;
+  --character-shadow-contact-width: 50%;
+  --character-shadow-contact-height: 42%;
+  --character-shadow-bottom: 0.7%;
+  --character-shadow-opacity: 0.86;
+  --character-shadow-blur: 1.2px;
+}
+
+.robot-bay,
+.alien-walk-bay {
+  position: absolute;
   pointer-events: none;
   opacity: 0;
   transition: opacity 220ms ease;
 }
 
-.robot-bay.is-active {
+.robot-bay {
+  z-index: 6;
+}
+
+.alien-walk-bay {
+  z-index: 6;
+}
+
+.robot-bay.is-active,
+.alien-walk-bay.is-active {
   opacity: 1;
+}
+
+.alien-walk-bay.is-active {
+  z-index: 17;
 }
 
 .robot-cleaner {
@@ -815,6 +878,48 @@ body {
   filter: blur(4px);
 }
 
+.alien-walker {
+  --alien-walker-x: 0px;
+  --alien-walker-width: 320px;
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: var(--alien-walker-width);
+  transform: translate3d(var(--alien-walker-x), 0, 0);
+  transform-origin: center bottom;
+  will-change: transform;
+}
+
+.alien-walker__sprite {
+  display: block;
+  width: 100%;
+  height: auto;
+  transform-origin: center bottom;
+  filter:
+    brightness(0.94)
+    saturate(0.96)
+    drop-shadow(0 0 12px rgba(169, 228, 255, 0.08))
+    drop-shadow(0 10px 18px rgba(0, 0, 0, 0.28));
+}
+
+.alien-walker__shadow {
+  position: absolute;
+  left: 50%;
+  bottom: 2px;
+  width: 56%;
+  height: 16px;
+  border-radius: 999px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0, 0, 0, 0.56) 0%,
+    rgba(0, 0, 0, 0.34) 40%,
+    rgba(0, 0, 0, 0.1) 72%,
+    transparent 100%
+  );
+  transform: translateX(-50%);
+  filter: blur(3px);
+}
+
 .stasis-bay__core {
   position: absolute;
   inset: 3.4% 11.6% 7.2%;
@@ -851,6 +956,7 @@ body {
 }
 
 .stasis-bay__glow,
+.stasis-bay__shadow,
 .stasis-bay__mist,
 .stasis-bay__scan,
 .stasis-bay__glass {
@@ -868,6 +974,127 @@ body {
   animation: chamberPulse 3.8s ease-in-out infinite;
 }
 
+.stasis-bay__shadow {
+  inset: auto;
+  left: var(--character-shadow-left);
+  bottom: var(--character-shadow-bottom);
+  width: var(--character-shadow-width);
+  height: var(--character-shadow-height);
+  z-index: 0;
+  background:
+    radial-gradient(
+      ellipse at center,
+      rgba(2, 7, 12, 0.66) 0%,
+      rgba(2, 7, 12, 0.5) 24%,
+      rgba(2, 7, 12, 0.2) 46%,
+      rgba(2, 7, 12, 0.05) 62%,
+      transparent 78%
+    );
+  transform: translateX(-50%) perspective(var(--character-shadow-perspective)) rotateX(var(--character-shadow-tilt));
+  transform-origin: center bottom;
+  filter: blur(var(--character-shadow-blur));
+  opacity: var(--character-shadow-opacity);
+  mix-blend-mode: multiply;
+}
+
+.is-armory-editing .stasis-bay__shadow {
+  pointer-events: none;
+}
+
+.is-armory-editing .stasis-bay__shadow.is-selected {
+  opacity: 0.96;
+  filter:
+    blur(var(--character-shadow-blur))
+    drop-shadow(0 0 10px rgba(143, 228, 255, 0.28));
+}
+
+.is-armory-editing .stasis-bay__shadow.is-selected::before {
+  box-shadow:
+    0 0 0 1px rgba(143, 228, 255, 0.52),
+    0 0 16px rgba(255, 90, 102, 0.24);
+}
+
+.stasis-bay__shadow-handle {
+  position: absolute;
+  left: var(--character-shadow-left);
+  bottom: var(--character-shadow-handle-bottom);
+  z-index: 2;
+  width: 20px;
+  height: 20px;
+  border: 1px solid rgba(7, 17, 26, 0.86);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 35% 35%, rgba(233, 250, 255, 0.98) 0 18%, rgba(148, 229, 255, 0.96) 19% 54%, rgba(30, 118, 154, 0.92) 55% 100%);
+  box-shadow:
+    0 0 0 2px rgba(7, 15, 24, 0.34),
+    0 0 18px rgba(143, 228, 255, 0.32);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 50%) scale(0.96);
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.is-armory-editing .stasis-bay__shadow-handle {
+  opacity: 0.9;
+  pointer-events: auto;
+  cursor: grab;
+}
+
+.is-armory-editing .stasis-bay__shadow-handle:hover,
+.is-armory-editing .stasis-bay__shadow-handle.is-selected {
+  opacity: 1;
+  transform: translate(-50%, 50%) scale(1.08);
+  box-shadow:
+    0 0 0 2px rgba(7, 15, 24, 0.24),
+    0 0 22px rgba(143, 228, 255, 0.42),
+    0 0 10px rgba(255, 90, 102, 0.2);
+}
+
+.is-armory-editing .stasis-bay__shadow-handle.is-selected {
+  cursor: grabbing;
+}
+
+.stasis-bay__shadow::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 40%;
+  width: var(--character-shadow-contact-width);
+  height: var(--character-shadow-contact-height);
+  border-radius: 999px;
+  background:
+    radial-gradient(
+      ellipse at center,
+      rgba(2, 7, 12, 0.94) 0%,
+      rgba(2, 7, 12, 0.76) 34%,
+      rgba(2, 7, 12, 0.22) 54%,
+      rgba(2, 7, 12, 0.04) 68%,
+      transparent 78%
+    );
+  transform: translateX(-50%);
+  filter: blur(0.35px);
+  opacity: 0.98;
+}
+
+.stasis-bay__shadow::after {
+  content: "";
+  position: absolute;
+  inset: 36% 22% 16%;
+  border-radius: 999px;
+  background:
+    radial-gradient(
+      ellipse at center,
+      rgba(2, 7, 12, 0.08) 0%,
+      rgba(2, 7, 12, 0.03) 48%,
+      transparent 100%
+    );
+  filter: blur(1.4px);
+  opacity: 0.44;
+}
+
 .bruno {
   position: absolute;
   left: 50%;
@@ -877,6 +1104,7 @@ body {
   height: auto;
   transform: translateX(-50%) scale(1.08);
   transform-origin: center bottom;
+  z-index: 1;
   filter:
     brightness(0.88)
     saturate(0.94)
@@ -888,6 +1116,26 @@ body {
 
 .stasis-bay--donatella .bruno {
   width: 67%;
+}
+
+.stasis-bay--alieno .bruno {
+  width: 76%;
+  max-height: 92%;
+  bottom: 0.8%;
+}
+
+.stasis-bay--occupant-hidden .bruno,
+.stasis-bay--occupant-hidden .stasis-bay__shadow {
+  opacity: 0;
+}
+
+.stasis-bay--occupant-hidden .bruno {
+  visibility: hidden;
+}
+
+.stasis-bay--occupant-hidden .stasis-bay__shadow-handle {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .stasis-bay__mist {
@@ -1125,6 +1373,19 @@ body {
     drop-shadow(0 0 10px rgba(134, 216, 255, 0.34));
 }
 
+.hud-trigger__icon-image--alien {
+  filter:
+    brightness(0)
+    saturate(100%)
+    invert(73%)
+    sepia(39%)
+    saturate(2392%)
+    hue-rotate(336deg)
+    brightness(106%)
+    contrast(102%)
+    drop-shadow(0 0 10px rgba(255, 138, 92, 0.36));
+}
+
 .hud-trigger:hover,
 .hud-trigger:focus-visible {
   transform: translateY(-2px);
@@ -1155,6 +1416,13 @@ body {
   box-shadow:
     inset 0 0 0 1px rgba(86, 195, 255, 0.08),
     0 0 24px rgba(86, 195, 255, 0.12);
+}
+
+.hud-trigger--alien {
+  border-color: rgba(255, 138, 92, 0.28);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 138, 92, 0.08),
+    0 0 24px rgba(255, 138, 92, 0.12);
 }
 
 .hud-trigger[aria-expanded="true"] {
@@ -1188,6 +1456,15 @@ body {
     0 0 28px rgba(86, 195, 255, 0.18);
 }
 
+.hud-trigger--alien[aria-pressed="true"] {
+  background:
+    linear-gradient(180deg, rgba(54, 25, 14, 0.88), rgba(20, 10, 7, 0.72)),
+    linear-gradient(90deg, rgba(255, 138, 92, 0.1), transparent 42%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 138, 92, 0.16),
+    0 0 28px rgba(255, 138, 92, 0.2);
+}
+
 .hud-trigger--embedded.hud-trigger--health {
   border-color: transparent;
   box-shadow:
@@ -1210,6 +1487,14 @@ body {
     inset 0 1px 0 rgba(134, 216, 255, 0.12),
     inset 0 0 0 1px rgba(134, 216, 255, 0.05),
     0 0 12px rgba(86, 195, 255, 0.08);
+}
+
+.hud-trigger--embedded.hud-trigger--alien {
+  border-color: transparent;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 188, 146, 0.14),
+    inset 0 0 0 1px rgba(255, 138, 92, 0.06),
+    0 0 12px rgba(255, 138, 92, 0.1);
 }
 
 .hud-trigger--embedded.hud-trigger--health[aria-expanded="true"] {
@@ -1240,6 +1525,16 @@ body {
     inset 0 1px 0 rgba(86, 195, 255, 0.22),
     inset 0 0 0 1px rgba(86, 195, 255, 0.08),
     0 0 16px rgba(86, 195, 255, 0.16);
+}
+
+.hud-trigger--embedded.hud-trigger--alien[aria-pressed="true"] {
+  background:
+    linear-gradient(180deg, rgba(56, 30, 17, 0.42), rgba(24, 12, 8, 0.2)),
+    linear-gradient(135deg, rgba(255, 138, 92, 0.18), transparent 58%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 188, 146, 0.24),
+    inset 0 0 0 1px rgba(255, 138, 92, 0.08),
+    0 0 16px rgba(255, 138, 92, 0.18);
 }
 
 .hud-trigger--robot.hud-trigger--compact {
@@ -1543,6 +1838,7 @@ body {
 
   .armory-editor__controls {
     flex-wrap: wrap;
+    justify-content: center;
   }
 
   .armory-editor__button {
@@ -1550,8 +1846,12 @@ body {
     min-width: 72px;
   }
 
+  .armory-editor__transcript {
+    width: min(94vw, 430px);
+  }
+
   .armory-editor__json {
-    min-height: 124px;
+    min-height: 132px;
     font-size: 0.59rem;
   }
 
@@ -1598,6 +1898,11 @@ body {
 
   .stasis-bay--donatella .bruno {
     width: 68%;
+  }
+
+  .stasis-bay--alieno .bruno {
+    width: 77%;
+    bottom: 1%;
   }
 
   .scene-header {

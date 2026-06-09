@@ -31,11 +31,24 @@ const CHARACTER_PROFILES = {
     frameCount: 36,
     alt: "Donatella in animazione idle all'interno della cella criogenica",
   },
+  alieno: {
+    name: "Alieno 1",
+    roomLabel: "ALIENO 1 / STASIS",
+    frameBasePath: "animazioni/Alieno_1/Idle",
+    frameCount: 36,
+    alt: "Alieno 1 in animazione idle all'interno della cella criogenica",
+  },
 };
+const ROOM_SEQUENCE = ["bruno", "donatella", "alieno"];
 const ROBOT_FRAME_COUNT = 36;
 const ROBOT_BASE_WIDTH = 390;
 const ROBOT_IDLE_MODES = ["move", "clean"];
+const ALIEN_WALK_FRAME_COUNT = 36;
+const ALIEN_WALK_BASE_WIDTH = 210;
+const ALIEN_WALK_FRAME_RATE = 14;
+const ALIEN_WALK_SPEED = 92;
 const ARMORY_STORAGE_KEY = "space-bruno-armory-placements-v1";
+const SHADOW_STORAGE_KEY = "space-bruno-shadow-placements-v1";
 const ARMORY_EXPORT_FILE_NAME = "armory-placements.json";
 const ARMORY_PASSWORD = "2001";
 const ARMORY_ALPHA_THRESHOLD = 24;
@@ -121,9 +134,44 @@ const ARMORY_ITEMS = [
     frame: { x: 1044.6, y: 581.5, width: 78.0, height: 78.0 },
   },
 ];
+const CHARACTER_SHADOWS = {
+  bruno: {
+    id: "shadow-bruno",
+    title: "Ombra Bruno",
+    placement: {
+      left: 50,
+      bottom: 0.8,
+      width: 52,
+      height: 16,
+    },
+  },
+  donatella: {
+    id: "shadow-donatella",
+    title: "Ombra Donatella",
+    placement: {
+      left: 50,
+      bottom: 0.95,
+      width: 34,
+      height: 13,
+    },
+  },
+  alieno: {
+    id: "shadow-alieno",
+    title: "Ombra Alieno 1",
+    placement: {
+      left: 50,
+      bottom: 0.7,
+      width: 48,
+      height: 15,
+    },
+  },
+};
 
 const hudFooter = document.querySelector(".hud-footer");
 const stasisBay = document.getElementById("stasis-bay");
+const stasisBayCore = document.querySelector(".stasis-bay__core");
+const stasisShadow = document.querySelector(".stasis-bay__shadow");
+const stasisShadowHandle = document.querySelector(".stasis-bay__shadow-handle");
 const brunoFrame = document.getElementById("bruno-frame");
 const roomLabel = document.getElementById("room-label");
 const roomPrev = document.getElementById("room-prev");
@@ -144,6 +192,8 @@ const halLoginCancel = document.getElementById("hal-login-cancel");
 const armoryEditor = document.getElementById("armory-editor");
 const armoryEditorItem = document.getElementById("armory-editor-item");
 const armoryEditorSave = document.getElementById("armory-editor-save");
+const armoryEditorJsonToggle = document.getElementById("armory-editor-json-toggle");
+const armoryEditorTranscript = document.getElementById("armory-editor-transcript");
 const armoryEditorExport = document.getElementById("armory-editor-export");
 const armoryEditorReset = document.getElementById("armory-editor-reset");
 const armoryEditorExit = document.getElementById("armory-editor-exit");
@@ -162,6 +212,11 @@ const robotCleaner = document.getElementById("robot-cleaner");
 const robotFrame = document.getElementById("robot-frame");
 const robotToggle = document.getElementById("robot-toggle");
 const robotToggleHint = robotToggle?.querySelector(".hud-trigger__hint");
+const alienToggle = document.getElementById("alien-toggle");
+const alienToggleHint = alienToggle?.querySelector(".hud-trigger__hint");
+const alienWalkBay = document.getElementById("alien-walk-bay");
+const alienWalker = document.getElementById("alien-walker");
+const alienWalkFrame = document.getElementById("alien-walk-frame");
 const audioToggle = document.getElementById("audio-toggle");
 const hudTelemetryMetrics = [];
 const armoryHotspots = [];
@@ -170,6 +225,7 @@ let armoryHoverPreview = null;
 let lastArmoryFocus = null;
 let lastHalFocus = null;
 let armoryPlacements = {};
+let shadowPlacements = {};
 let armoryToastTimer = null;
 let suppressNextArmoryBackdropClick = false;
 
@@ -238,11 +294,25 @@ const robotAnimations = {
     fps: 10,
   },
 };
+const alienWalkAnimations = {
+  right: {
+    frames: buildFrames("animazioni/Alieno_1/Walk/dx", ALIEN_WALK_FRAME_COUNT),
+    fps: ALIEN_WALK_FRAME_RATE,
+  },
+  left: {
+    frames: buildFrames("animazioni/Alieno_1/Walk/sx", ALIEN_WALK_FRAME_COUNT),
+    fps: ALIEN_WALK_FRAME_RATE,
+  },
+};
 
 preloadFrames(Object.values(characterAnimations).flatMap((animation) => animation.forwardFrames));
 preloadFrames([
   ...robotAnimations.move.frames,
   ...robotAnimations.clean.frames,
+]);
+preloadFrames([
+  ...alienWalkAnimations.right.frames,
+  ...alienWalkAnimations.left.frames,
 ]);
 preloadFrames(ARMORY_ITEMS.map((item) => item.image));
 
@@ -256,6 +326,19 @@ const robotState = {
   frameIndex: 0,
   lastFrameTime: 0,
   loopsUntilModeSwap: 1,
+};
+const alienWalkerState = {
+  visible: false,
+  position: 0,
+  minX: 0,
+  maxX: 0,
+  direction: 1,
+  frameIndex: 0,
+  lastFrameTime: 0,
+  lastMoveTime: 0,
+};
+const alienReleaseState = {
+  released: false,
 };
 
 function createAudioTrack(src, options = {}) {
@@ -272,6 +355,13 @@ const audioTracks = {
   ambience: createAudioTrack("assets/audio/ambience-spaceship.ogg", {
     loop: true,
     volume: 0.52,
+  }),
+  alienAlert: createAudioTrack("assets/audio/alien-alert.ogg", {
+    volume: 0.34,
+  }),
+  alienLoop: createAudioTrack("assets/audio/alien-growl-loop.ogg", {
+    loop: true,
+    volume: 0.18,
   }),
   robotLoop: createAudioTrack("assets/audio/robot-loop.ogg", {
     loop: true,
@@ -341,6 +431,12 @@ function syncSceneAudio() {
     playLoop(audioTracks.robotLoop);
   } else {
     stopLoop(audioTracks.robotLoop, true);
+  }
+
+  if (shouldPlay && alienWalkerState.visible) {
+    playLoop(audioTracks.alienLoop);
+  } else {
+    stopLoop(audioTracks.alienLoop, true);
   }
 
   updateAudioToggle();
@@ -591,6 +687,21 @@ function getDefaultArmoryPlacements() {
   );
 }
 
+function cloneShadowPlacement(placement) {
+  return {
+    left: placement.left,
+    bottom: placement.bottom,
+    width: placement.width,
+    height: placement.height,
+  };
+}
+
+function getDefaultShadowPlacements() {
+  return Object.fromEntries(
+    Object.entries(CHARACTER_SHADOWS).map(([room, shadow]) => [room, cloneShadowPlacement(shadow.placement)]),
+  );
+}
+
 function normalizeArmoryPlacement(placement) {
   return {
     x: Number(placement.x.toFixed(2)),
@@ -600,14 +711,31 @@ function normalizeArmoryPlacement(placement) {
   };
 }
 
+function normalizeShadowPlacement(placement) {
+  return {
+    left: Number(placement.left.toFixed(2)),
+    bottom: Number(placement.bottom.toFixed(2)),
+    width: Number(placement.width.toFixed(2)),
+    height: Number(placement.height.toFixed(2)),
+  };
+}
+
 function serializeArmoryPlacements() {
   return JSON.stringify(
-    Object.fromEntries(
-      ARMORY_ITEMS.map((item) => {
-        const placement = armoryPlacements[item.id] ?? item.frame;
-        return [item.id, normalizeArmoryPlacement(placement)];
-      }),
-    ),
+    {
+      items: Object.fromEntries(
+        ARMORY_ITEMS.map((item) => {
+          const placement = armoryPlacements[item.id] ?? item.frame;
+          return [item.id, normalizeArmoryPlacement(placement)];
+        }),
+      ),
+      shadows: Object.fromEntries(
+        Object.entries(CHARACTER_SHADOWS).map(([room, shadow]) => {
+          const placement = shadowPlacements[room] ?? shadow.placement;
+          return [room, normalizeShadowPlacement(placement)];
+        }),
+      ),
+    },
     null,
     2,
   );
@@ -619,6 +747,18 @@ function refreshArmoryPlacementTranscript() {
   }
 
   armoryEditorJson.value = `${serializeArmoryPlacements()}\n`;
+}
+
+function setArmoryTranscriptOpen(isOpen) {
+  if (!armoryEditorTranscript || !armoryEditorJsonToggle) {
+    return;
+  }
+
+  armoryEditorTranscript.hidden = !isOpen;
+  armoryEditorTranscript.classList.toggle("is-open", isOpen);
+  armoryEditorTranscript.setAttribute("aria-hidden", String(!isOpen));
+  armoryEditorJsonToggle.setAttribute("aria-pressed", String(isOpen));
+  armoryEditorJsonToggle.textContent = isOpen ? "Chiudi JSON" : "JSON";
 }
 
 function exportArmoryPlacementsJson() {
@@ -668,9 +808,46 @@ function loadArmoryPlacements() {
   refreshArmoryPlacementTranscript();
 }
 
+function loadShadowPlacements() {
+  const defaults = getDefaultShadowPlacements();
+
+  try {
+    const saved = JSON.parse(localStorage.getItem(SHADOW_STORAGE_KEY) || "{}");
+
+    for (const room of Object.keys(CHARACTER_SHADOWS)) {
+      const placement = saved[room];
+
+      if (
+        placement
+        && Number.isFinite(placement.left)
+        && Number.isFinite(placement.bottom)
+        && Number.isFinite(placement.width)
+        && Number.isFinite(placement.height)
+        && placement.width > 0
+        && placement.height > 0
+      ) {
+        defaults[room] = cloneShadowPlacement(placement);
+      }
+    }
+  } catch {
+    try {
+      localStorage.removeItem(SHADOW_STORAGE_KEY);
+    } catch {}
+  }
+
+  shadowPlacements = defaults;
+  refreshArmoryPlacementTranscript();
+}
+
 function saveArmoryPlacements() {
   try {
     localStorage.setItem(ARMORY_STORAGE_KEY, JSON.stringify(armoryPlacements));
+  } catch {}
+}
+
+function saveShadowPlacements() {
+  try {
+    localStorage.setItem(SHADOW_STORAGE_KEY, JSON.stringify(shadowPlacements));
   } catch {}
 }
 
@@ -698,6 +875,15 @@ function resetArmoryPlacements() {
   refreshArmoryPlacementTranscript();
   layoutArmoryHotspots();
   updateArmoryEditorStatus();
+}
+
+function resetShadowPlacements() {
+  shadowPlacements = getDefaultShadowPlacements();
+  try {
+    localStorage.removeItem(SHADOW_STORAGE_KEY);
+  } catch {}
+  refreshArmoryPlacementTranscript();
+  applyCharacterShadowPlacement();
 }
 
 function buildArmoryImageMask(item) {
@@ -737,6 +923,7 @@ function buildArmoryHotspots() {
   }
 
   loadArmoryPlacements();
+  loadShadowPlacements();
 
   const fragment = document.createDocumentFragment();
 
@@ -802,6 +989,7 @@ function buildArmoryHotspots() {
   armoryHoverPreview.setAttribute("aria-hidden", "true");
   armoryLayer.append(armoryHoverPreview);
   layoutArmoryHotspots();
+  applyCharacterShadowPlacement();
 }
 
 function layoutArmoryHotspots() {
@@ -883,6 +1071,115 @@ function getItemFromId(itemId) {
   return ARMORY_ITEMS.find((item) => item.id === itemId);
 }
 
+function getShadowRoomFromTargetId(targetId) {
+  return Object.keys(CHARACTER_SHADOWS).find((room) => CHARACTER_SHADOWS[room].id === targetId) ?? null;
+}
+
+function getEditorTargetById(targetId) {
+  if (!targetId) {
+    return null;
+  }
+
+  const shadowRoom = getShadowRoomFromTargetId(targetId);
+
+  if (shadowRoom) {
+    return {
+      kind: "shadow",
+      id: CHARACTER_SHADOWS[shadowRoom].id,
+      title: CHARACTER_SHADOWS[shadowRoom].title,
+      room: shadowRoom,
+    };
+  }
+
+  const item = getItemFromId(targetId);
+
+  if (!item) {
+    return null;
+  }
+
+  return {
+    kind: "item",
+    id: item.id,
+    title: item.title,
+    item,
+  };
+}
+
+function getActiveShadowPlacement() {
+  return shadowPlacements[activeRoom] ?? CHARACTER_SHADOWS[activeRoom].placement;
+}
+
+function getShadowEditorMetrics(room = activeRoom) {
+  if (!stasisBayCore) {
+    return null;
+  }
+
+  const placement = shadowPlacements[room] ?? CHARACTER_SHADOWS[room].placement;
+  const bounds = stasisBayCore.getBoundingClientRect();
+  const widthPx = (placement.width / 100) * bounds.width;
+  const heightPx = (placement.height / 100) * bounds.height;
+  const leftPx = (placement.left / 100) * bounds.width - widthPx / 2;
+  const topPx = bounds.height - ((placement.bottom / 100) * bounds.height) - heightPx;
+
+  return {
+    placement,
+    boundsWidth: bounds.width,
+    boundsHeight: bounds.height,
+    widthPx,
+    heightPx,
+    leftPx,
+    topPx,
+  };
+}
+
+function getShadowLocalPoint(clientX, clientY) {
+  if (!stasisBayCore) {
+    return null;
+  }
+
+  const bounds = stasisBayCore.getBoundingClientRect();
+  return {
+    x: clientX - bounds.left,
+    y: clientY - bounds.top,
+  };
+}
+
+function updateShadowPlacementFromPixels(room, nextRect) {
+  const width = Math.max(14, (nextRect.widthPx / nextRect.boundsWidth) * 100);
+  const height = Math.max(8, (nextRect.heightPx / nextRect.boundsHeight) * 100);
+  const left = ((nextRect.leftPx + nextRect.widthPx / 2) / nextRect.boundsWidth) * 100;
+  const bottom = ((nextRect.boundsHeight - (nextRect.topPx + nextRect.heightPx)) / nextRect.boundsHeight) * 100;
+
+  shadowPlacements[room] = {
+    left,
+    bottom,
+    width,
+    height,
+  };
+}
+
+function applyCharacterShadowPlacement() {
+  if (!stasisBay || !stasisShadow || !stasisShadowHandle) {
+    return;
+  }
+
+  const shadow = CHARACTER_SHADOWS[activeRoom];
+  const placement = getActiveShadowPlacement();
+  const handleBottom = placement.bottom + placement.height * 0.42;
+
+  stasisShadow.dataset.shadowTarget = shadow.id;
+  stasisShadow.dataset.shadowRoom = activeRoom;
+  stasisShadowHandle.dataset.shadowTarget = shadow.id;
+  stasisShadowHandle.dataset.shadowRoom = activeRoom;
+  stasisBay.style.setProperty("--character-shadow-left", `${placement.left}%`);
+  stasisBay.style.setProperty("--character-shadow-bottom", `${placement.bottom}%`);
+  stasisBay.style.setProperty("--character-shadow-width", `${placement.width}%`);
+  stasisBay.style.setProperty("--character-shadow-height", `${placement.height}%`);
+  stasisBay.style.setProperty("--character-shadow-handle-bottom", `${handleBottom}%`);
+  stasisShadow.classList.toggle("is-selected", armoryEditorState.selectedItemId === shadow.id);
+  stasisShadowHandle.classList.toggle("is-selected", armoryEditorState.selectedItemId === shadow.id);
+}
+
 function isPointInArmoryItem(item, point) {
   const placement = armoryPlacements[item.id] ?? item.frame;
 
@@ -929,10 +1226,25 @@ function updateArmoryEditorStatus() {
   }
 
   armoryEditor.setAttribute("aria-hidden", String(!armoryEditorState.active));
-  const selectedItem = getItemFromId(armoryEditorState.selectedItemId);
-  armoryEditorItem.textContent = selectedItem ? selectedItem.title : "NESSUNA SAGOMA";
+  const selectedTarget = getEditorTargetById(armoryEditorState.selectedItemId);
+  armoryEditorItem.textContent = selectedTarget ? selectedTarget.title : "NESSUNA SAGOMA";
   document.body.classList.toggle("is-armory-editing", armoryEditorState.active);
   layoutArmoryHotspots();
+  applyCharacterShadowPlacement();
+}
+
+function getRoomIndex(room) {
+  return ROOM_SEQUENCE.indexOf(room);
+}
+
+function getAdjacentRoom(room, direction) {
+  const roomIndex = getRoomIndex(room);
+
+  if (roomIndex < 0) {
+    return null;
+  }
+
+  return ROOM_SEQUENCE[roomIndex + direction] ?? null;
 }
 
 function selectArmoryEditorItem(item) {
@@ -953,19 +1265,44 @@ function setArmoryHoverItem(item) {
 }
 
 function scaleSelectedArmoryItem(factor) {
-  const item = getItemFromId(armoryEditorState.selectedItemId);
+  const target = getEditorTargetById(armoryEditorState.selectedItemId);
 
-  if (!item) {
+  if (!target) {
     return;
   }
 
-  const placement = armoryPlacements[item.id];
+  if (target.kind === "shadow") {
+    const metrics = getShadowEditorMetrics(target.room);
+
+    if (!metrics) {
+      return;
+    }
+
+    const centerX = metrics.leftPx + metrics.widthPx / 2;
+    const centerY = metrics.topPx + metrics.heightPx / 2;
+    const nextWidthPx = Math.max(metrics.widthPx * factor, metrics.boundsWidth * 0.14);
+    const nextHeightPx = Math.max(metrics.heightPx * factor, metrics.boundsHeight * 0.08);
+
+    updateShadowPlacementFromPixels(target.room, {
+      leftPx: centerX - nextWidthPx / 2,
+      topPx: centerY - nextHeightPx / 2,
+      widthPx: nextWidthPx,
+      heightPx: nextHeightPx,
+      boundsWidth: metrics.boundsWidth,
+      boundsHeight: metrics.boundsHeight,
+    });
+    refreshArmoryPlacementTranscript();
+    applyCharacterShadowPlacement();
+    return;
+  }
+
+  const placement = armoryPlacements[target.id];
   const centerX = placement.x + placement.width / 2;
   const centerY = placement.y + placement.height / 2;
   const nextWidth = clampValue(placement.width * factor, 18, BACKDROP_SIZE.width * 0.42);
   const nextHeight = clampValue(placement.height * factor, 18, BACKDROP_SIZE.height * 0.72);
 
-  armoryPlacements[item.id] = {
+  armoryPlacements[target.id] = {
     x: centerX - nextWidth / 2,
     y: centerY - nextHeight / 2,
     width: nextWidth,
@@ -979,12 +1316,14 @@ function enterArmoryEditor() {
   armoryEditorState.active = true;
   setArmoryHoverItem(null);
   closeHalLogin({ restoreFocus: false });
+  setArmoryTranscriptOpen(false);
   updateArmoryEditorStatus();
 }
 
 function exitArmoryEditor() {
   armoryEditorState.active = false;
   armoryEditorState.draggingItemId = null;
+  setArmoryTranscriptOpen(false);
   selectArmoryEditorItem(null);
 }
 
@@ -999,16 +1338,27 @@ function handleArmoryPointerDown(event) {
   }
 
   const directSilhouette = event.target.closest?.(".armory-silhouette");
-  const directItem = armoryEditorState.active && directSilhouette
-    ? getItemFromId(directSilhouette.dataset.armoryItem)
+  const directShadowHandle = armoryEditorState.active
+    ? event.target.closest?.(".stasis-bay__shadow-handle")
+    : null;
+  const directShadow = armoryEditorState.active
+    ? event.target.closest?.(".stasis-bay__shadow")
+    : null;
+  const directTargetId = directShadowHandle?.dataset.shadowTarget
+    ?? directShadow?.dataset.shadowTarget
+    ?? directSilhouette?.dataset.armoryItem
+    ?? null;
+  const directTarget = armoryEditorState.active && directTargetId
+    ? getEditorTargetById(directTargetId)
     : null;
   const point = getBackdropPoint(event.clientX, event.clientY);
   const hoveredItem = !armoryEditorState.active
     ? getItemFromId(armoryEditorState.hoveredItemId)
     : null;
-  const item = directItem ?? hoveredItem ?? findArmoryItemAtPoint(point);
+  const fallbackItem = hoveredItem ?? findArmoryItemAtPoint(point);
+  const target = directTarget ?? (fallbackItem ? getEditorTargetById(fallbackItem.id) : null);
 
-  if (!item) {
+  if (!target) {
     return;
   }
 
@@ -1019,21 +1369,34 @@ function handleArmoryPointerDown(event) {
   event.preventDefault();
   event.stopPropagation();
 
-  const placement = armoryPlacements[item.id];
-  armoryEditorState.draggingItemId = item.id;
-  armoryEditorState.dragOffsetX = point.x - placement.x;
-  armoryEditorState.dragOffsetY = point.y - placement.y;
-  selectArmoryEditorItem(item);
+  if (target.kind === "shadow") {
+    const metrics = getShadowEditorMetrics(target.room);
+    const localPoint = getShadowLocalPoint(event.clientX, event.clientY);
 
-  if (typeof directSilhouette?.setPointerCapture === "function") {
-    directSilhouette.setPointerCapture(event.pointerId);
+    if (!metrics || !localPoint) {
+      return;
+    }
+
+    armoryEditorState.dragOffsetX = localPoint.x - metrics.leftPx;
+    armoryEditorState.dragOffsetY = localPoint.y - metrics.topPx;
+  } else {
+    const placement = armoryPlacements[target.id];
+    armoryEditorState.dragOffsetX = point.x - placement.x;
+    armoryEditorState.dragOffsetY = point.y - placement.y;
+  }
+
+  armoryEditorState.draggingItemId = target.id;
+  selectArmoryEditorItem(target);
+
+  if (typeof (directShadowHandle ?? directShadow ?? directSilhouette)?.setPointerCapture === "function") {
+    (directShadowHandle ?? directShadow ?? directSilhouette).setPointerCapture(event.pointerId);
   }
 }
 
 function handleArmoryPointerMove(event) {
-  const item = getItemFromId(armoryEditorState.draggingItemId);
+  const target = getEditorTargetById(armoryEditorState.draggingItemId);
 
-  if (!item) {
+  if (!target) {
     const directHitbox = !armoryEditorState.active
       ? event.target.closest?.(".armory-hitbox")
       : null;
@@ -1057,8 +1420,29 @@ function handleArmoryPointerMove(event) {
     return;
   }
 
+  if (target.kind === "shadow") {
+    const metrics = getShadowEditorMetrics(target.room);
+    const localPoint = getShadowLocalPoint(event.clientX, event.clientY);
+
+    if (!metrics || !localPoint) {
+      return;
+    }
+
+    updateShadowPlacementFromPixels(target.room, {
+      leftPx: localPoint.x - armoryEditorState.dragOffsetX,
+      topPx: localPoint.y - armoryEditorState.dragOffsetY,
+      widthPx: metrics.widthPx,
+      heightPx: metrics.heightPx,
+      boundsWidth: metrics.boundsWidth,
+      boundsHeight: metrics.boundsHeight,
+    });
+    refreshArmoryPlacementTranscript();
+    applyCharacterShadowPlacement();
+    return;
+  }
+
   const point = getBackdropPoint(event.clientX, event.clientY);
-  const placement = armoryPlacements[item.id];
+  const placement = armoryPlacements[target.id];
 
   placement.x = point.x - armoryEditorState.dragOffsetX;
   placement.y = point.y - armoryEditorState.dragOffsetY;
@@ -1093,14 +1477,50 @@ function handleArmoryClick(event) {
 }
 
 function nudgeSelectedArmoryItem(key, multiplier) {
-  const item = getItemFromId(armoryEditorState.selectedItemId);
+  const target = getEditorTargetById(armoryEditorState.selectedItemId);
 
-  if (!armoryEditorState.active || !item) {
+  if (!armoryEditorState.active || !target) {
     return false;
   }
 
-  const placement = armoryPlacements[item.id];
   const amount = multiplier;
+
+  if (target.kind === "shadow") {
+    const metrics = getShadowEditorMetrics(target.room);
+
+    if (!metrics) {
+      return false;
+    }
+
+    let nextLeftPx = metrics.leftPx;
+    let nextTopPx = metrics.topPx;
+
+    if (key === "ArrowLeft") {
+      nextLeftPx -= amount;
+    } else if (key === "ArrowRight") {
+      nextLeftPx += amount;
+    } else if (key === "ArrowUp") {
+      nextTopPx -= amount;
+    } else if (key === "ArrowDown") {
+      nextTopPx += amount;
+    } else {
+      return false;
+    }
+
+    updateShadowPlacementFromPixels(target.room, {
+      leftPx: nextLeftPx,
+      topPx: nextTopPx,
+      widthPx: metrics.widthPx,
+      heightPx: metrics.heightPx,
+      boundsWidth: metrics.boundsWidth,
+      boundsHeight: metrics.boundsHeight,
+    });
+    refreshArmoryPlacementTranscript();
+    applyCharacterShadowPlacement();
+    return true;
+  }
+
+  const placement = armoryPlacements[target.id];
 
   if (key === "ArrowLeft") {
     placement.x -= amount;
@@ -1120,18 +1540,25 @@ function nudgeSelectedArmoryItem(key, multiplier) {
 }
 
 function handleArmoryWheel(event) {
-  if (!armoryEditorState.active || !event.target.closest?.(".armory-silhouette")) {
+  if (!armoryEditorState.active) {
     return;
   }
 
-  const item = getItemFromId(event.target.closest(".armory-silhouette").dataset.armoryItem);
+  const directShadowHandle = event.target.closest?.(".stasis-bay__shadow-handle");
+  const directShadow = event.target.closest?.(".stasis-bay__shadow");
+  const directSilhouette = event.target.closest?.(".armory-silhouette");
+  const targetId = directShadowHandle?.dataset.shadowTarget
+    ?? directShadow?.dataset.shadowTarget
+    ?? directSilhouette?.dataset.armoryItem
+    ?? null;
+  const target = getEditorTargetById(targetId);
 
-  if (!item) {
+  if (!target) {
     return;
   }
 
   event.preventDefault();
-  selectArmoryEditorItem(item);
+  selectArmoryEditorItem(target);
   scaleSelectedArmoryItem(event.deltaY < 0 ? 1.035 : 0.965);
 }
 
@@ -1237,6 +1664,30 @@ function layoutStasisBay() {
   stasisBay.style.top = `${offsetY + STASIS_RECT.y * scale}px`;
   stasisBay.style.width = `${STASIS_RECT.width * scale}px`;
   stasisBay.style.height = `${STASIS_RECT.height * scale}px`;
+  applyCharacterShadowPlacement();
+}
+
+function getCorridorLaneMetrics() {
+  const { offsetX, offsetY, scale, renderedWidth } = getBackdropMetrics();
+  const visibleLeft = Math.max(0, offsetX);
+  const visibleRight = Math.min(window.innerWidth, offsetX + renderedWidth);
+  const sideMargin = window.innerWidth <= 800
+    ? Math.max(12, window.innerWidth * 0.03)
+    : Math.max(36, window.innerWidth * 0.045);
+  const laneLeft = visibleLeft + sideMargin;
+  const laneRight = visibleRight - sideMargin;
+  const laneTop = Math.max(0, offsetY + ROBOT_FLOOR_BAND.top * scale);
+  const laneBottom = Math.min(window.innerHeight, offsetY + ROBOT_FLOOR_BAND.bottom * scale);
+
+  return {
+    scale,
+    laneLeft,
+    laneRight,
+    laneTop,
+    laneBottom,
+    bayWidth: Math.max(160, laneRight - laneLeft),
+    bayHeight: Math.max(90, laneBottom - laneTop),
+  };
 }
 
 function applyRobotTransform() {
@@ -1253,18 +1704,13 @@ function layoutRobotBay() {
     return;
   }
 
-  const { offsetX, offsetY, scale, renderedWidth } = getBackdropMetrics();
-  const visibleLeft = Math.max(0, offsetX);
-  const visibleRight = Math.min(window.innerWidth, offsetX + renderedWidth);
-  const sideMargin = window.innerWidth <= 800
-    ? Math.max(12, window.innerWidth * 0.03)
-    : Math.max(36, window.innerWidth * 0.045);
-  const laneLeft = visibleLeft + sideMargin;
-  const laneRight = visibleRight - sideMargin;
-  const laneTop = Math.max(0, offsetY + ROBOT_FLOOR_BAND.top * scale);
-  const laneBottom = Math.min(window.innerHeight, offsetY + ROBOT_FLOOR_BAND.bottom * scale);
-  const bayWidth = Math.max(160, laneRight - laneLeft);
-  const bayHeight = Math.max(90, laneBottom - laneTop);
+  const {
+    scale,
+    laneLeft,
+    laneTop,
+    bayWidth,
+    bayHeight,
+  } = getCorridorLaneMetrics();
   const previousMaxX = Math.max(1, robotState.maxX);
   const progress = robotState.position / previousMaxX;
   const robotWidth = Math.max(
@@ -1286,12 +1732,160 @@ function layoutRobotBay() {
   applyRobotTransform();
 }
 
-let activeRoom = "bruno";
+function getAlienWalkAnimation() {
+  return alienWalkerState.direction >= 0
+    ? alienWalkAnimations.right
+    : alienWalkAnimations.left;
+}
+
+function applyAlienWalkerTransform() {
+  if (!alienWalker) {
+    return;
+  }
+
+  alienWalker.style.setProperty("--alien-walker-x", `${alienWalkerState.position}px`);
+}
+
+function chooseAlienSpawnX() {
+  const maxX = alienWalkerState.maxX;
+
+  if (maxX <= 0) {
+    return 0;
+  }
+
+  return Math.random() * maxX;
+}
+
+function layoutAlienWalkBay() {
+  if (!alienWalkBay || !alienWalker) {
+    return;
+  }
+
+  const {
+    scale,
+    laneLeft,
+    laneTop,
+    bayWidth,
+    bayHeight,
+  } = getCorridorLaneMetrics();
+  const previousMaxX = Math.max(1, alienWalkerState.maxX);
+  const progress = alienWalkerState.position / previousMaxX;
+  const alienWidth = Math.max(
+    window.innerWidth <= 800 ? 132 : 156,
+    Math.min(window.innerWidth <= 800 ? 220 : 248, ALIEN_WALK_BASE_WIDTH * scale),
+  );
+
+  alienWalkBay.style.left = `${laneLeft}px`;
+  alienWalkBay.style.top = `${laneTop}px`;
+  alienWalkBay.style.width = `${bayWidth}px`;
+  alienWalkBay.style.height = `${bayHeight}px`;
+  alienWalker.style.setProperty("--alien-walker-width", `${alienWidth}px`);
+
+  alienWalkerState.maxX = Math.max(0, bayWidth - alienWidth);
+  alienWalkerState.position = Math.min(
+    alienWalkerState.maxX,
+    Math.max(alienWalkerState.minX, alienWalkerState.maxX * (Number.isFinite(progress) ? progress : 0.5)),
+  );
+  applyAlienWalkerTransform();
+}
+
+function showAlienWalker() {
+  if (!alienWalkBay || !alienWalkFrame) {
+    return;
+  }
+
+  alienWalkerState.visible = true;
+  alienWalkBay.classList.add("is-active");
+  alienWalkBay.setAttribute("aria-hidden", "false");
+  alienWalkerState.position = chooseAlienSpawnX();
+  alienWalkerState.direction = Math.random() < 0.5 ? -1 : 1;
+  alienWalkerState.frameIndex = 0;
+  alienWalkerState.lastFrameTime = 0;
+  alienWalkerState.lastMoveTime = 0;
+  alienWalkFrame.src = getAlienWalkAnimation().frames[0];
+  applyAlienWalkerTransform();
+  syncSceneAudio();
+}
+
+function hideAlienWalker() {
+  if (!alienWalkBay) {
+    return;
+  }
+
+  alienWalkerState.visible = false;
+  alienWalkerState.lastFrameTime = 0;
+  alienWalkerState.lastMoveTime = 0;
+  alienWalkBay.classList.remove("is-active");
+  alienWalkBay.setAttribute("aria-hidden", "true");
+  syncSceneAudio();
+}
+
+function syncStasisOccupantVisibility() {
+  if (!stasisBay) {
+    return;
+  }
+
+  const isOccupantHidden = activeRoom === "alieno" && alienReleaseState.released;
+  stasisBay.classList.toggle("stasis-bay--occupant-hidden", isOccupantHidden);
+}
+
+function updateAlienToggle() {
+  if (!alienToggle || !alienToggleHint) {
+    return;
+  }
+
+  const isAlienRoomActive = activeRoom === "alieno";
+  const isReleased = alienReleaseState.released;
+
+  alienToggle.hidden = !isAlienRoomActive;
+  alienToggle.setAttribute("aria-hidden", String(!isAlienRoomActive));
+  alienToggle.setAttribute("aria-pressed", String(isReleased));
+  alienToggle.setAttribute(
+    "aria-label",
+    isReleased
+      ? "Contieni alieno nella cella criogenica"
+      : "Libera alieno dalla cella criogenica",
+  );
+  alienToggleHint.textContent = isReleased ? "CONTIENI XENO" : "LIBERA XENO";
+}
+
+function syncAlienWalkerVisibility() {
+  if (activeRoom === "alieno" && alienReleaseState.released) {
+    if (!alienWalkerState.visible) {
+      showAlienWalker();
+    }
+    return;
+  }
+
+  if (alienWalkerState.visible) {
+    hideAlienWalker();
+  }
+}
+
+function resolveInitialRoom() {
+  const roomFromSearch = new URLSearchParams(window.location.search).get("room");
+  const roomFromHash = window.location.hash.replace(/^#/, "");
+  const requestedRoom = (roomFromSearch || roomFromHash || "bruno").trim().toLowerCase();
+
+  return CHARACTER_PROFILES[requestedRoom] ? requestedRoom : "bruno";
+}
+
+function resolveInitialAlienReleased() {
+  const alienMode = new URLSearchParams(window.location.search).get("alien");
+  const normalizedMode = (alienMode || "").trim().toLowerCase();
+
+  return ["1", "free", "released", "libero", "walk"].includes(normalizedMode);
+}
+
+let activeRoom = resolveInitialRoom();
+alienReleaseState.released = resolveInitialAlienReleased();
 let characterFrameIndex = 0;
 let characterLastFrameTime = 0;
 
 function updateRoomNavigation() {
   const activeProfile = CHARACTER_PROFILES[activeRoom];
+  const previousRoom = getAdjacentRoom(activeRoom, -1);
+  const nextRoom = getAdjacentRoom(activeRoom, 1);
 
   if (roomLabel) {
     roomLabel.textContent = activeProfile.roomLabel;
@@ -1300,7 +1894,13 @@ function updateRoomNavigation() {
   if (stasisBay) {
     stasisBay.setAttribute("aria-label", `Cella criogenica di ${activeProfile.name}`);
     stasisBay.classList.toggle("stasis-bay--donatella", activeRoom === "donatella");
+    stasisBay.classList.toggle("stasis-bay--alieno", activeRoom === "alieno");
   }
+
+  applyCharacterShadowPlacement();
+  syncStasisOccupantVisibility();
+  updateAlienToggle();
+  syncAlienWalkerVisibility();
 
   if (brunoFrame) {
     brunoFrame.alt = activeProfile.alt;
@@ -1308,8 +1908,26 @@ function updateRoomNavigation() {
       ?? characterAnimations[activeRoom].frames[0];
   }
 
-  roomPrev?.classList.toggle("is-visible", activeRoom === "donatella");
-  roomNext?.classList.toggle("is-visible", activeRoom === "bruno");
+  roomPrev?.classList.toggle("is-visible", Boolean(previousRoom));
+  roomNext?.classList.toggle("is-visible", Boolean(nextRoom));
+
+  if (roomPrev) {
+    roomPrev.setAttribute(
+      "aria-label",
+      previousRoom
+        ? `Vai alla stanza di ${CHARACTER_PROFILES[previousRoom].name}`
+        : "Nessuna stanza precedente",
+    );
+  }
+
+  if (roomNext) {
+    roomNext.setAttribute(
+      "aria-label",
+      nextRoom
+        ? `Vai alla stanza di ${CHARACTER_PROFILES[nextRoom].name}`
+        : "Nessuna stanza successiva",
+    );
+  }
 }
 
 function setActiveRoom(nextRoom) {
@@ -1437,6 +2055,32 @@ function toggleRobot() {
   showRobot();
 }
 
+function setAlienReleased(nextReleased) {
+  if (alienReleaseState.released === nextReleased) {
+    updateAlienToggle();
+    syncStasisOccupantVisibility();
+    syncAlienWalkerVisibility();
+    syncSceneAudio();
+    return;
+  }
+
+  alienReleaseState.released = nextReleased;
+  updateAlienToggle();
+  syncStasisOccupantVisibility();
+  syncAlienWalkerVisibility();
+  syncSceneAudio();
+
+  if (nextReleased) {
+    playOneShot(audioTracks.alienAlert, 0.34);
+  } else {
+    playOneShot(audioTracks.uiClick, 0.12);
+  }
+}
+
+function toggleAlienRelease() {
+  setAlienReleased(!alienReleaseState.released);
+}
+
 function animateRobot(timestamp) {
   if (robotState.visible && robotFrame) {
     const animation = robotAnimations[robotState.mode];
@@ -1463,6 +2107,49 @@ function animateRobot(timestamp) {
   }
 
   window.requestAnimationFrame(animateRobot);
+}
+
+function animateAlienWalker(timestamp) {
+  if (alienWalkerState.visible && alienWalkFrame) {
+    if (!alienWalkerState.lastMoveTime) {
+      alienWalkerState.lastMoveTime = timestamp;
+    }
+
+    const moveDelta = timestamp - alienWalkerState.lastMoveTime;
+    alienWalkerState.lastMoveTime = timestamp;
+
+    if (alienWalkerState.maxX > 0) {
+      alienWalkerState.position += (ALIEN_WALK_SPEED * moveDelta * alienWalkerState.direction) / 1000;
+
+      if (alienWalkerState.position <= alienWalkerState.minX) {
+        alienWalkerState.position = alienWalkerState.minX;
+        alienWalkerState.direction = 1;
+        alienWalkerState.frameIndex = 0;
+        alienWalkFrame.src = alienWalkAnimations.right.frames[0];
+      } else if (alienWalkerState.position >= alienWalkerState.maxX) {
+        alienWalkerState.position = alienWalkerState.maxX;
+        alienWalkerState.direction = -1;
+        alienWalkerState.frameIndex = 0;
+        alienWalkFrame.src = alienWalkAnimations.left.frames[0];
+      }
+
+      applyAlienWalkerTransform();
+    }
+
+    if (!alienWalkerState.lastFrameTime) {
+      alienWalkerState.lastFrameTime = timestamp;
+    }
+
+    const animation = getAlienWalkAnimation();
+    const frameDuration = 1000 / animation.fps;
+    if (timestamp - alienWalkerState.lastFrameTime >= frameDuration) {
+      alienWalkerState.frameIndex = (alienWalkerState.frameIndex + 1) % animation.frames.length;
+      alienWalkFrame.src = animation.frames[alienWalkerState.frameIndex];
+      alienWalkerState.lastFrameTime = timestamp;
+    }
+  }
+
+  window.requestAnimationFrame(animateAlienWalker);
 }
 
 function layoutHudPanels() {
@@ -1566,16 +2253,28 @@ robotToggle?.addEventListener("click", () => {
   toggleRobot();
 });
 
+alienToggle?.addEventListener("click", () => {
+  toggleAlienRelease();
+});
+
 audioToggle?.addEventListener("click", () => {
   toggleSceneAudio();
 });
 
 roomNext?.addEventListener("click", () => {
-  setActiveRoom("donatella");
+  const nextRoom = getAdjacentRoom(activeRoom, 1);
+
+  if (nextRoom) {
+    setActiveRoom(nextRoom);
+  }
 });
 
 roomPrev?.addEventListener("click", () => {
-  setActiveRoom("bruno");
+  const previousRoom = getAdjacentRoom(activeRoom, -1);
+
+  if (previousRoom) {
+    setActiveRoom(previousRoom);
+  }
 });
 
 halTrigger?.addEventListener("click", () => {
@@ -1608,9 +2307,14 @@ armoryModal?.querySelector(".armory-modal__scrim")?.addEventListener("click", ()
 
 armoryEditorSave?.addEventListener("click", () => {
   saveArmoryPlacements();
+  saveShadowPlacements();
   refreshArmoryPlacementTranscript();
-  showArmoryToast("Sagome salvate in locale");
+  showArmoryToast("Sagome e ombre salvate in locale");
   exitArmoryEditor();
+});
+
+armoryEditorJsonToggle?.addEventListener("click", () => {
+  setArmoryTranscriptOpen(armoryEditorTranscript?.hidden ?? true);
 });
 
 armoryEditorExport?.addEventListener("click", () => {
@@ -1620,6 +2324,8 @@ armoryEditorExport?.addEventListener("click", () => {
 
 armoryEditorReset?.addEventListener("click", () => {
   resetArmoryPlacements();
+  resetShadowPlacements();
+  showArmoryToast("Sagome e ombre ripristinate");
 });
 
 armoryEditorExit?.addEventListener("click", () => {
@@ -1689,6 +2395,7 @@ buildArmoryHotspots();
 layoutArmoryHotspots();
 layoutStasisBay();
 layoutRobotBay();
+layoutAlienWalkBay();
 layoutHud();
 setupHudTelemetry();
 refreshHudTelemetry();
@@ -1699,7 +2406,9 @@ window.addEventListener("resize", () => {
   layoutArmoryHotspots();
   layoutStasisBay();
   layoutRobotBay();
+  layoutAlienWalkBay();
   layoutHud();
 });
 window.requestAnimationFrame(animateCharacter);
 window.requestAnimationFrame(animateRobot);
+window.requestAnimationFrame(animateAlienWalker);

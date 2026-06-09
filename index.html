@@ -40,11 +40,17 @@
           <button class="armory-editor__button" type="button" data-armory-scale="0.96">Scala -</button>
           <button class="armory-editor__button" type="button" data-armory-scale="1.04">Scala +</button>
           <button class="armory-editor__button" id="armory-editor-save" type="button">Salva</button>
+          <button class="armory-editor__button" id="armory-editor-json-toggle" type="button" aria-pressed="false">JSON</button>
           <button class="armory-editor__button" id="armory-editor-export" type="button">Scarica JSON</button>
           <button class="armory-editor__button" id="armory-editor-reset" type="button">Reset</button>
           <button class="armory-editor__button" id="armory-editor-exit" type="button">Esci</button>
         </div>
-        <div class="armory-editor__transcript">
+        <div
+          class="armory-editor__transcript"
+          id="armory-editor-transcript"
+          aria-hidden="true"
+          hidden
+        >
           <span class="armory-editor__eyebrow">armory-placements.json</span>
           <textarea
             class="armory-editor__json"
@@ -95,6 +101,8 @@
       <section class="stasis-bay" id="stasis-bay" aria-label="Cella criogenica di Bruno">
         <div class="stasis-bay__core">
           <div class="stasis-bay__glow" aria-hidden="true"></div>
+          <div class="stasis-bay__shadow" aria-hidden="true"></div>
+          <div class="stasis-bay__shadow-handle" aria-hidden="true"></div>
           <img
             id="bruno-frame"
             class="bruno"
@@ -144,6 +152,25 @@
             </button>
 
             <button
+              class="hud-trigger hud-trigger--alien hud-trigger--embedded"
+              id="alien-toggle"
+              type="button"
+              aria-pressed="false"
+              aria-label="Libera alieno dalla cella criogenica"
+              hidden
+            >
+              <img
+                class="hud-trigger__icon-image hud-trigger__icon-image--alien"
+                src="assets/icons/frozen-orb.svg"
+                alt=""
+                aria-hidden="true"
+                decoding="async"
+              >
+              <span class="hud-trigger__label">Alieno</span>
+              <span class="hud-trigger__hint">LIBERA XENO</span>
+            </button>
+
+            <button
               class="hud-trigger hud-trigger--cryo hud-trigger--embedded"
               type="button"
               data-panel-target="panel-cryo"
@@ -176,6 +203,23 @@
             class="robot-cleaner__sprite"
             src="animazioni/Robot_pulizie/Pulisce_fermo/frame_0000.png"
             alt="Robot pulizie in pattugliamento sotto la cella criogenica"
+            decoding="async"
+          >
+        </div>
+      </section>
+
+      <section
+        class="alien-walk-bay"
+        id="alien-walk-bay"
+        aria-hidden="true"
+      >
+        <div class="alien-walker" id="alien-walker">
+          <div class="alien-walker__shadow" aria-hidden="true"></div>
+          <img
+            id="alien-walk-frame"
+            class="alien-walker__sprite"
+            src="animazioni/Alieno_1/Walk/dx/frame_0000.png"
+            alt="Alieno 1 in pattugliamento nel corridoio"
             decoding="async"
           >
         </div>
