@@ -3633,15 +3633,6 @@ dossierTrigger?.addEventListener("click", () => {
   openDossierModal(activeRoom, dossierTrigger);
 });
 
-brunoToggle?.addEventListener("click", () => {
-  toggleBrunoRelease();
-});
-
-donatellaToggle?.addEventListener("click", () => {
-  playOneShot(audioTracks.uiClick, 0.12);
-  showArmoryToast("Walk Donatella in preparazione");
-});
-
 alienToggle?.addEventListener("click", () => {
   toggleAlienRelease();
 });
