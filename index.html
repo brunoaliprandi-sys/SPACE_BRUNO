@@ -15,6 +15,7 @@
       ></div>
       <div class="scene__vignette" aria-hidden="true"></div>
       <div class="scene__atmosphere" aria-hidden="true"></div>
+      <div class="flicker-layer" id="flicker-layer" aria-hidden="true"></div>
       <div class="armory-layer" id="armory-layer" aria-label="Rastrelliere armi e attrezzature"></div>
 
       <button
@@ -39,6 +40,10 @@
         <div class="armory-editor__controls">
           <button class="armory-editor__button" type="button" data-armory-scale="0.96">Scala -</button>
           <button class="armory-editor__button" type="button" data-armory-scale="1.04">Scala +</button>
+          <button class="armory-editor__button" id="armory-editor-add-flicker" type="button">LED +</button>
+          <button class="armory-editor__button" id="armory-editor-remove-flicker" type="button">LED -</button>
+          <button class="armory-editor__button" id="armory-editor-flicker-faster" type="button">Lento -</button>
+          <button class="armory-editor__button" id="armory-editor-flicker-slower" type="button">Lento +</button>
           <button class="armory-editor__button" id="armory-editor-save" type="button">Salva</button>
           <button class="armory-editor__button" id="armory-editor-json-toggle" type="button" aria-pressed="false">JSON</button>
           <button class="armory-editor__button" id="armory-editor-export" type="button">Scarica JSON</button>

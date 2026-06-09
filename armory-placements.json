@@ -80,5 +80,15 @@
       "width": 48,
       "height": 15
     }
-  }
+  },
+  "flickers": [
+    {
+      "id": "led-flicker-1",
+      "x": 158,
+      "y": 205,
+      "width": 98,
+      "height": 34,
+      "slowness": 2.8
+    }
+  ]
 }

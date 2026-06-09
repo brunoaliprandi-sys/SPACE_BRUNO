@@ -49,9 +49,27 @@ const ALIEN_WALK_FRAME_RATE = 14;
 const ALIEN_WALK_SPEED = 92;
 const ARMORY_STORAGE_KEY = "space-bruno-armory-placements-v1";
 const SHADOW_STORAGE_KEY = "space-bruno-shadow-placements-v1";
+const FLICKER_STORAGE_KEY = "space-bruno-flicker-effects-v1";
 const ARMORY_EXPORT_FILE_NAME = "armory-placements.json";
 const ARMORY_PASSWORD = "2001";
 const ARMORY_ALPHA_THRESHOLD = 24;
+const FLICKER_DEFAULT_EFFECTS = [
+  {
+    id: "led-flicker-1",
+    x: 158,
+    y: 205,
+    width: 98,
+    height: 34,
+    slowness: 2.8,
+  },
+];
+const FLICKER_SLOWNESS_MIN = 0.45;
+const FLICKER_SLOWNESS_MAX = 8.5;
+const FLICKER_SLOWNESS_STEP = 0.25;
+const FLICKER_DEFAULT_SIZE = {
+  width: 98,
+  height: 34,
+};
 const ARMORY_ITEMS = [
   {
     id: "pistola",
@@ -189,8 +207,13 @@ const halLoginForm = document.getElementById("hal-login-form");
 const halPassword = document.getElementById("hal-password");
 const halLoginError = document.getElementById("hal-login-error");
 const halLoginCancel = document.getElementById("hal-login-cancel");
+const flickerLayer = document.getElementById("flicker-layer");
 const armoryEditor = document.getElementById("armory-editor");
 const armoryEditorItem = document.getElementById("armory-editor-item");
+const armoryEditorAddFlicker = document.getElementById("armory-editor-add-flicker");
+const armoryEditorRemoveFlicker = document.getElementById("armory-editor-remove-flicker");
+const armoryEditorFlickerFaster = document.getElementById("armory-editor-flicker-faster");
+const armoryEditorFlickerSlower = document.getElementById("armory-editor-flicker-slower");
 const armoryEditorSave = document.getElementById("armory-editor-save");
 const armoryEditorJsonToggle = document.getElementById("armory-editor-json-toggle");
 const armoryEditorTranscript = document.getElementById("armory-editor-transcript");
@@ -221,11 +244,14 @@ const audioToggle = document.getElementById("audio-toggle");
 const hudTelemetryMetrics = [];
 const armoryHotspots = [];
 const armoryImageMasks = new Map();
+const flickerElements = new Map();
+const flickerRuntime = new Map();
 let armoryHoverPreview = null;
 let lastArmoryFocus = null;
 let lastHalFocus = null;
 let armoryPlacements = {};
 let shadowPlacements = {};
+let flickerEffects = [];
 let armoryToastTimer = null;
 let suppressNextArmoryBackdropClick = false;
 
@@ -702,6 +728,21 @@ function getDefaultShadowPlacements() {
   );
 }
 
+function cloneFlickerEffect(effect) {
+  return {
+    id: effect.id,
+    x: effect.x,
+    y: effect.y,
+    width: effect.width,
+    height: effect.height,
+    slowness: effect.slowness,
+  };
+}
+
+function getDefaultFlickerEffects() {
+  return FLICKER_DEFAULT_EFFECTS.map((effect) => cloneFlickerEffect(effect));
+}
+
 function normalizeArmoryPlacement(placement) {
   return {
     x: Number(placement.x.toFixed(2)),
@@ -720,6 +761,17 @@ function normalizeShadowPlacement(placement) {
   };
 }
 
+function normalizeFlickerEffect(effect) {
+  return {
+    id: effect.id,
+    x: Number(effect.x.toFixed(2)),
+    y: Number(effect.y.toFixed(2)),
+    width: Number(effect.width.toFixed(2)),
+    height: Number(effect.height.toFixed(2)),
+    slowness: Number(effect.slowness.toFixed(2)),
+  };
+}
+
 function serializeArmoryPlacements() {
   return JSON.stringify(
     {
@@ -735,6 +787,7 @@ function serializeArmoryPlacements() {
           return [room, normalizeShadowPlacement(placement)];
         }),
       ),
+      flickers: flickerEffects.map((effect) => normalizeFlickerEffect(effect)),
     },
     null,
     2,
@@ -839,6 +892,51 @@ function loadShadowPlacements() {
   refreshArmoryPlacementTranscript();
 }
 
+function loadFlickerEffects() {
+  const defaults = getDefaultFlickerEffects();
+
+  try {
+    const saved = JSON.parse(localStorage.getItem(FLICKER_STORAGE_KEY) || "null");
+    const savedEffects = Array.isArray(saved)
+      ? saved
+      : Array.isArray(saved?.flickers)
+        ? saved.flickers
+        : null;
+
+    if (savedEffects) {
+      flickerEffects = savedEffects
+        .filter((effect) => (
+          effect
+          && typeof effect.id === "string"
+          && Number.isFinite(effect.x)
+          && Number.isFinite(effect.y)
+          && Number.isFinite(effect.width)
+          && Number.isFinite(effect.height)
+          && Number.isFinite(effect.slowness)
+          && effect.width > 0
+          && effect.height > 0
+        ))
+        .map((effect) => ({
+          id: effect.id,
+          x: effect.x,
+          y: effect.y,
+          width: effect.width,
+          height: effect.height,
+          slowness: clampValue(effect.slowness, FLICKER_SLOWNESS_MIN, FLICKER_SLOWNESS_MAX),
+        }));
+    } else {
+      flickerEffects = defaults;
+    }
+  } catch {
+    try {
+      localStorage.removeItem(FLICKER_STORAGE_KEY);
+    } catch {}
+    flickerEffects = defaults;
+  }
+
+  refreshArmoryPlacementTranscript();
+}
+
 function saveArmoryPlacements() {
   try {
     localStorage.setItem(ARMORY_STORAGE_KEY, JSON.stringify(armoryPlacements));
@@ -848,6 +946,12 @@ function saveArmoryPlacements() {
 function saveShadowPlacements() {
   try {
     localStorage.setItem(SHADOW_STORAGE_KEY, JSON.stringify(shadowPlacements));
+  } catch {}
+}
+
+function saveFlickerEffects() {
+  try {
+    localStorage.setItem(FLICKER_STORAGE_KEY, JSON.stringify(flickerEffects));
   } catch {}
 }
 
@@ -884,6 +988,17 @@ function resetShadowPlacements() {
   } catch {}
   refreshArmoryPlacementTranscript();
   applyCharacterShadowPlacement();
+}
+
+function resetFlickerEffects() {
+  flickerEffects = getDefaultFlickerEffects();
+  flickerRuntime.clear();
+  try {
+    localStorage.removeItem(FLICKER_STORAGE_KEY);
+  } catch {}
+  syncFlickerElements();
+  refreshArmoryPlacementTranscript();
+  layoutFlickerEffects();
 }
 
 function buildArmoryImageMask(item) {
@@ -924,6 +1039,7 @@ function buildArmoryHotspots() {
 
   loadArmoryPlacements();
   loadShadowPlacements();
+  loadFlickerEffects();
 
   const fragment = document.createDocumentFragment();
 
@@ -988,11 +1104,132 @@ function buildArmoryHotspots() {
   armoryHoverPreview.decoding = "async";
   armoryHoverPreview.setAttribute("aria-hidden", "true");
   armoryLayer.append(armoryHoverPreview);
+  syncFlickerElements();
   layoutArmoryHotspots();
   applyCharacterShadowPlacement();
 }
 
+function getFlickerEffectById(effectId) {
+  return flickerEffects.find((effect) => effect.id === effectId) ?? null;
+}
+
+function getFlickerOrdinalLabel(effectId) {
+  const effectIndex = flickerEffects.findIndex((effect) => effect.id === effectId);
+  return String(Math.max(0, effectIndex) + 1).padStart(2, "0");
+}
+
+function getFlickerTargetTitle(effect) {
+  return `LED DISTURBO ${getFlickerOrdinalLabel(effect.id)} / ${effect.slowness.toFixed(2)}s`;
+}
+
+function primeFlickerRuntime(effect, timestamp = performance.now()) {
+  if (flickerRuntime.has(effect.id)) {
+    return flickerRuntime.get(effect.id);
+  }
+
+  const runtime = {
+    currentOpacity: 0.84 + Math.random() * 0.08,
+    burstEndTime: 0,
+    nextStepTime: 0,
+    nextBurstTime: timestamp + (0.35 + Math.random()) * effect.slowness * 1000,
+    ambientPhase: Math.random() * Math.PI * 2,
+  };
+
+  flickerRuntime.set(effect.id, runtime);
+  return runtime;
+}
+
+function updateSingleFlickerRuntime(effect, timestamp) {
+  const runtime = primeFlickerRuntime(effect, timestamp);
+
+  if (timestamp >= runtime.nextBurstTime && timestamp >= runtime.burstEndTime) {
+    runtime.burstEndTime = timestamp + 90 + Math.random() * 240;
+    runtime.nextStepTime = timestamp;
+    runtime.nextBurstTime = timestamp + effect.slowness * (900 + Math.random() * 950);
+  }
+
+  if (timestamp < runtime.burstEndTime) {
+    if (timestamp >= runtime.nextStepTime) {
+      runtime.currentOpacity = Math.random() < 0.65
+        ? 0.16 + Math.random() * 0.36
+        : 0.72 + Math.random() * 0.24;
+      runtime.nextStepTime = timestamp + 18 + Math.random() * 46;
+    }
+  } else {
+    const ambientTarget = 0.86 + Math.sin((timestamp / 580) + runtime.ambientPhase) * 0.035;
+    runtime.currentOpacity += (ambientTarget - runtime.currentOpacity) * 0.14;
+  }
+
+  return clampValue(runtime.currentOpacity, 0.08, 1);
+}
+
+function buildFlickerElement(effect) {
+  const element = document.createElement("div");
+  element.className = "flicker-led";
+  element.dataset.flickerId = effect.id;
+  element.setAttribute("aria-hidden", "true");
+  element.innerHTML = [
+    '<span class="flicker-led__bar flicker-led__bar--primary"></span>',
+    '<span class="flicker-led__bar flicker-led__bar--secondary"></span>',
+    '<span class="flicker-led__noise"></span>',
+    '<span class="flicker-led__handle" aria-hidden="true"></span>',
+  ].join("");
+  return element;
+}
+
+function syncFlickerElements() {
+  if (!flickerLayer) {
+    return;
+  }
+
+  const effectIds = new Set(flickerEffects.map((effect) => effect.id));
+
+  for (const [effectId, element] of flickerElements.entries()) {
+    if (effectIds.has(effectId)) {
+      continue;
+    }
+
+    element.remove();
+    flickerElements.delete(effectId);
+    flickerRuntime.delete(effectId);
+  }
+
+  for (const effect of flickerEffects) {
+    if (flickerElements.has(effect.id)) {
+      continue;
+    }
+
+    const element = buildFlickerElement(effect);
+    flickerLayer.append(element);
+    flickerElements.set(effect.id, element);
+  }
+}
+
+function layoutFlickerEffects() {
+  if (!flickerElements.size) {
+    return;
+  }
+
+  const { offsetX, offsetY, scale } = getBackdropMetrics();
+
+  for (const effect of flickerEffects) {
+    const element = flickerElements.get(effect.id);
+
+    if (!element) {
+      continue;
+    }
+
+    element.style.left = `${offsetX + effect.x * scale}px`;
+    element.style.top = `${offsetY + effect.y * scale}px`;
+    element.style.width = `${effect.width * scale}px`;
+    element.style.height = `${effect.height * scale}px`;
+    element.classList.toggle("is-selected", armoryEditorState.selectedItemId === effect.id);
+  }
+}
+
 function layoutArmoryHotspots() {
+  layoutFlickerEffects();
+
   if (!armoryHotspots.length) {
     return;
   }
@@ -1071,6 +1308,49 @@ function getItemFromId(itemId) {
   return ARMORY_ITEMS.find((item) => item.id === itemId);
 }
 
+function getNextFlickerEffectId() {
+  let nextIndex = 1;
+
+  while (flickerEffects.some((effect) => effect.id === `led-flicker-${nextIndex}`)) {
+    nextIndex += 1;
+  }
+
+  return `led-flicker-${nextIndex}`;
+}
+
+function createFlickerEffectDraft() {
+  const selectedTarget = getEditorTargetById(armoryEditorState.selectedItemId);
+  const sourceEffect = selectedTarget?.kind === "flicker"
+    ? getFlickerEffectById(selectedTarget.id)
+    : flickerEffects[flickerEffects.length - 1] ?? FLICKER_DEFAULT_EFFECTS[0];
+  const offsetStep = 18 + (flickerEffects.length % 3) * 8;
+
+  return {
+    id: getNextFlickerEffectId(),
+    x: clampValue(sourceEffect.x + offsetStep, 0, BACKDROP_SIZE.width - sourceEffect.width),
+    y: clampValue(sourceEffect.y + offsetStep * 0.7, 0, BACKDROP_SIZE.height - sourceEffect.height),
+    width: sourceEffect.width ?? FLICKER_DEFAULT_SIZE.width,
+    height: sourceEffect.height ?? FLICKER_DEFAULT_SIZE.height,
+    slowness: sourceEffect.slowness ?? FLICKER_DEFAULT_EFFECTS[0].slowness,
+  };
+}
+
+function addFlickerEffect() {
+  const nextEffect = createFlickerEffectDraft();
+
+  flickerEffects.push(nextEffect);
+  syncFlickerElements();
+  refreshArmoryPlacementTranscript();
+  layoutFlickerEffects();
+  selectArmoryEditorItem({
+    kind: "flicker",
+    id: nextEffect.id,
+    title: getFlickerTargetTitle(nextEffect),
+    effect: nextEffect,
+  });
+  showArmoryToast(`LED disturbo ${getFlickerOrdinalLabel(nextEffect.id)} aggiunto`);
+}
+
 function getShadowRoomFromTargetId(targetId) {
   return Object.keys(CHARACTER_SHADOWS).find((room) => CHARACTER_SHADOWS[room].id === targetId) ?? null;
 }
@@ -1078,6 +1358,17 @@ function getShadowRoomFromTargetId(targetId) {
 function getEditorTargetById(targetId) {
   if (!targetId) {
     return null;
+  }
+
+  const flickerEffect = getFlickerEffectById(targetId);
+
+  if (flickerEffect) {
+    return {
+      kind: "flicker",
+      id: flickerEffect.id,
+      title: getFlickerTargetTitle(flickerEffect),
+      effect: flickerEffect,
+    };
   }
 
   const shadowRoom = getShadowRoomFromTargetId(targetId);
@@ -1271,6 +1562,22 @@ function scaleSelectedArmoryItem(factor) {
     return;
   }
 
+  if (target.kind === "flicker") {
+    const nextWidth = clampValue(target.effect.width * factor, 28, BACKDROP_SIZE.width * 0.24);
+    const nextHeight = clampValue(target.effect.height * factor, 12, BACKDROP_SIZE.height * 0.14);
+    const centerX = target.effect.x + target.effect.width / 2;
+    const centerY = target.effect.y + target.effect.height / 2;
+
+    target.effect.width = nextWidth;
+    target.effect.height = nextHeight;
+    target.effect.x = centerX - nextWidth / 2;
+    target.effect.y = centerY - nextHeight / 2;
+    refreshArmoryPlacementTranscript();
+    layoutFlickerEffects();
+    updateArmoryEditorStatus();
+    return;
+  }
+
   if (target.kind === "shadow") {
     const metrics = getShadowEditorMetrics(target.room);
 
@@ -1312,6 +1619,45 @@ function scaleSelectedArmoryItem(factor) {
   layoutArmoryHotspots();
 }
 
+function removeSelectedFlickerEffect() {
+  const target = getEditorTargetById(armoryEditorState.selectedItemId);
+
+  if (target?.kind !== "flicker") {
+    return false;
+  }
+
+  const targetIndex = flickerEffects.findIndex((effect) => effect.id === target.id);
+
+  if (targetIndex < 0) {
+    return false;
+  }
+
+  flickerEffects.splice(targetIndex, 1);
+  flickerRuntime.delete(target.id);
+  syncFlickerElements();
+  refreshArmoryPlacementTranscript();
+  selectArmoryEditorItem(null);
+  showArmoryToast("LED disturbo rimosso");
+  return true;
+}
+
+function changeSelectedFlickerSlowness(delta) {
+  const target = getEditorTargetById(armoryEditorState.selectedItemId);
+
+  if (target?.kind !== "flicker") {
+    return false;
+  }
+
+  target.effect.slowness = clampValue(
+    Number((target.effect.slowness + delta).toFixed(2)),
+    FLICKER_SLOWNESS_MIN,
+    FLICKER_SLOWNESS_MAX,
+  );
+  refreshArmoryPlacementTranscript();
+  updateArmoryEditorStatus();
+  return true;
+}
+
 function enterArmoryEditor() {
   armoryEditorState.active = true;
   setArmoryHoverItem(null);
@@ -1338,13 +1684,21 @@ function handleArmoryPointerDown(event) {
   }
 
   const directSilhouette = event.target.closest?.(".armory-silhouette");
+  const directFlickerHandle = armoryEditorState.active
+    ? event.target.closest?.(".flicker-led__handle")
+    : null;
+  const directFlicker = armoryEditorState.active
+    ? event.target.closest?.(".flicker-led")
+    : null;
   const directShadowHandle = armoryEditorState.active
     ? event.target.closest?.(".stasis-bay__shadow-handle")
     : null;
   const directShadow = armoryEditorState.active
     ? event.target.closest?.(".stasis-bay__shadow")
     : null;
-  const directTargetId = directShadowHandle?.dataset.shadowTarget
+  const directTargetId = directFlickerHandle?.closest(".flicker-led")?.dataset.flickerId
+    ?? directFlicker?.dataset.flickerId
+    ?? directShadowHandle?.dataset.shadowTarget
     ?? directShadow?.dataset.shadowTarget
     ?? directSilhouette?.dataset.armoryItem
     ?? null;
@@ -1379,6 +1733,9 @@ function handleArmoryPointerDown(event) {
 
     armoryEditorState.dragOffsetX = localPoint.x - metrics.leftPx;
     armoryEditorState.dragOffsetY = localPoint.y - metrics.topPx;
+  } else if (target.kind === "flicker") {
+    armoryEditorState.dragOffsetX = point.x - target.effect.x;
+    armoryEditorState.dragOffsetY = point.y - target.effect.y;
   } else {
     const placement = armoryPlacements[target.id];
     armoryEditorState.dragOffsetX = point.x - placement.x;
@@ -1388,8 +1745,8 @@ function handleArmoryPointerDown(event) {
   armoryEditorState.draggingItemId = target.id;
   selectArmoryEditorItem(target);
 
-  if (typeof (directShadowHandle ?? directShadow ?? directSilhouette)?.setPointerCapture === "function") {
-    (directShadowHandle ?? directShadow ?? directSilhouette).setPointerCapture(event.pointerId);
+  if (typeof (directFlickerHandle ?? directFlicker ?? directShadowHandle ?? directShadow ?? directSilhouette)?.setPointerCapture === "function") {
+    (directFlickerHandle ?? directFlicker ?? directShadowHandle ?? directShadow ?? directSilhouette).setPointerCapture(event.pointerId);
   }
 }
 
@@ -1438,6 +1795,16 @@ function handleArmoryPointerMove(event) {
     });
     refreshArmoryPlacementTranscript();
     applyCharacterShadowPlacement();
+    return;
+  }
+
+  if (target.kind === "flicker") {
+    const point = getBackdropPoint(event.clientX, event.clientY);
+
+    target.effect.x = point.x - armoryEditorState.dragOffsetX;
+    target.effect.y = point.y - armoryEditorState.dragOffsetY;
+    refreshArmoryPlacementTranscript();
+    layoutFlickerEffects();
     return;
   }
 
@@ -1520,6 +1887,24 @@ function nudgeSelectedArmoryItem(key, multiplier) {
     return true;
   }
 
+  if (target.kind === "flicker") {
+    if (key === "ArrowLeft") {
+      target.effect.x -= amount;
+    } else if (key === "ArrowRight") {
+      target.effect.x += amount;
+    } else if (key === "ArrowUp") {
+      target.effect.y -= amount;
+    } else if (key === "ArrowDown") {
+      target.effect.y += amount;
+    } else {
+      return false;
+    }
+
+    refreshArmoryPlacementTranscript();
+    layoutFlickerEffects();
+    return true;
+  }
+
   const placement = armoryPlacements[target.id];
 
   if (key === "ArrowLeft") {
@@ -1544,10 +1929,14 @@ function handleArmoryWheel(event) {
     return;
   }
 
+  const directFlickerHandle = event.target.closest?.(".flicker-led__handle");
+  const directFlicker = event.target.closest?.(".flicker-led");
   const directShadowHandle = event.target.closest?.(".stasis-bay__shadow-handle");
   const directShadow = event.target.closest?.(".stasis-bay__shadow");
   const directSilhouette = event.target.closest?.(".armory-silhouette");
-  const targetId = directShadowHandle?.dataset.shadowTarget
+  const targetId = directFlickerHandle?.closest(".flicker-led")?.dataset.flickerId
+    ?? directFlicker?.dataset.flickerId
+    ?? directShadowHandle?.dataset.shadowTarget
     ?? directShadow?.dataset.shadowTarget
     ?? directSilhouette?.dataset.armoryItem
     ?? null;
@@ -2152,6 +2541,23 @@ function animateAlienWalker(timestamp) {
   window.requestAnimationFrame(animateAlienWalker);
 }
 
+function animateFlickerEffects(timestamp) {
+  for (const effect of flickerEffects) {
+    const element = flickerElements.get(effect.id);
+
+    if (!element) {
+      continue;
+    }
+
+    element.style.setProperty(
+      "--flicker-opacity",
+      String(updateSingleFlickerRuntime(effect, timestamp).toFixed(3)),
+    );
+  }
+
+  window.requestAnimationFrame(animateFlickerEffects);
+}
+
 function layoutHudPanels() {
   if (!hudFooter || !stasisBay) {
     return;
@@ -2308,8 +2714,9 @@ armoryModal?.querySelector(".armory-modal__scrim")?.addEventListener("click", ()
 armoryEditorSave?.addEventListener("click", () => {
   saveArmoryPlacements();
   saveShadowPlacements();
+  saveFlickerEffects();
   refreshArmoryPlacementTranscript();
-  showArmoryToast("Sagome e ombre salvate in locale");
+  showArmoryToast("Sagome, ombre e LED salvati in locale");
   exitArmoryEditor();
 });
 
@@ -2325,11 +2732,34 @@ armoryEditorExport?.addEventListener("click", () => {
 armoryEditorReset?.addEventListener("click", () => {
   resetArmoryPlacements();
   resetShadowPlacements();
-  showArmoryToast("Sagome e ombre ripristinate");
+  resetFlickerEffects();
+  showArmoryToast("Sagome, ombre e LED ripristinati");
 });
 
 armoryEditorExit?.addEventListener("click", () => {
   exitArmoryEditor();
+});
+
+armoryEditorAddFlicker?.addEventListener("click", () => {
+  addFlickerEffect();
+});
+
+armoryEditorRemoveFlicker?.addEventListener("click", () => {
+  if (!removeSelectedFlickerEffect()) {
+    showArmoryToast("Seleziona un LED da rimuovere");
+  }
+});
+
+armoryEditorFlickerFaster?.addEventListener("click", () => {
+  if (!changeSelectedFlickerSlowness(-FLICKER_SLOWNESS_STEP)) {
+    showArmoryToast("Seleziona un LED per regolare il disturbo");
+  }
+});
+
+armoryEditorFlickerSlower?.addEventListener("click", () => {
+  if (!changeSelectedFlickerSlowness(FLICKER_SLOWNESS_STEP)) {
+    showArmoryToast("Seleziona un LED per regolare il disturbo");
+  }
 });
 
 for (const scaleButton of document.querySelectorAll("[data-armory-scale]")) {
@@ -2345,6 +2775,23 @@ document.addEventListener("pointerup", handleArmoryPointerUp);
 document.addEventListener("wheel", handleArmoryWheel, { passive: false });
 
 document.addEventListener("keydown", (event) => {
+  if (event.key === "Delete" || event.key === "Backspace") {
+    if (removeSelectedFlickerEffect()) {
+      event.preventDefault();
+    }
+    return;
+  }
+
+  if (event.key === "[" || event.key === "]") {
+    const slownessDelta = event.key === "]" ? FLICKER_SLOWNESS_STEP : -FLICKER_SLOWNESS_STEP;
+
+    if (changeSelectedFlickerSlowness(slownessDelta)) {
+      event.preventDefault();
+    }
+
+    return;
+  }
+
   if (event.key !== "Escape") {
     const nudgeAmount = event.shiftKey ? 10 : 1;
 
@@ -2412,3 +2859,4 @@ window.addEventListener("resize", () => {
 window.requestAnimationFrame(animateCharacter);
 window.requestAnimationFrame(animateRobot);
 window.requestAnimationFrame(animateAlienWalker);
+window.requestAnimationFrame(animateFlickerEffects);
