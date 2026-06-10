@@ -85,6 +85,21 @@
             AUDIO OFF
           </button>
         </div>
+        <button
+          class="hud-trigger hud-trigger--space-data scene-header__space-trigger"
+          id="space-data-trigger"
+          type="button"
+          aria-expanded="false"
+          aria-controls="space-data-modal"
+          aria-label="Apri Space Data con telemetria orbitale in tempo reale"
+          title="SPACE DATA / LIVE ORBIT FEED"
+          data-tooltip="SPACE DATA / LIVE ORBIT FEED"
+        >
+          <span
+            class="hud-trigger__icon scene-header__space-trigger-icon"
+            aria-hidden="true"
+          ></span>
+        </button>
       </header>
 
       <button
@@ -410,6 +425,255 @@
               hidden
             >
               <div class="dossier-modal__copy" id="dossier-modal-log"></div>
+            </section>
+          </div>
+        </article>
+      </div>
+
+      <div
+        class="armory-modal space-data-modal"
+        id="space-data-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="space-data-modal-title"
+        aria-describedby="space-data-modal-body"
+        aria-hidden="true"
+      >
+        <button class="armory-modal__scrim" type="button" aria-label="Chiudi telemetria spaziale"></button>
+        <article class="armory-modal__panel space-data-modal__panel">
+          <button class="armory-modal__close" id="space-data-modal-close" type="button" aria-label="Chiudi telemetria spaziale">
+            <span aria-hidden="true">&times;</span>
+          </button>
+          <section class="space-data-modal__monitor" aria-label="Monitor uplink esterno">
+            <span class="armory-modal__eyebrow">LIVE TELEMETRY / EXTERNAL UPLINK</span>
+            <h2 class="armory-modal__title" id="space-data-modal-title">Space Data Uplink</h2>
+            <div class="space-data-modal__scanner" aria-hidden="true">
+              <span class="space-data-modal__scanner-ring"></span>
+              <span class="space-data-modal__scanner-ring space-data-modal__scanner-ring--delay"></span>
+              <span class="space-data-modal__scanner-sweep"></span>
+              <span class="space-data-modal__scanner-dot"></span>
+            </div>
+            <div class="space-data-modal__summary-grid">
+              <article class="space-data-summary-card">
+                <span class="space-data-summary-card__label">Orbital Signal</span>
+                <strong class="space-data-summary-card__value" id="space-data-summary-signal">SYNC PENDING</strong>
+              </article>
+              <article class="space-data-summary-card">
+                <span class="space-data-summary-card__label">External Sync</span>
+                <strong class="space-data-summary-card__value" id="space-data-summary-sync">WAITING</strong>
+              </article>
+              <article class="space-data-summary-card">
+                <span class="space-data-summary-card__label">ISS Vector</span>
+                <strong class="space-data-summary-card__value" id="space-data-summary-iss">NO LOCK</strong>
+              </article>
+              <article class="space-data-summary-card">
+                <span class="space-data-summary-card__label">T- Launch</span>
+                <strong class="space-data-summary-card__value" id="space-data-summary-countdown">--:--:--</strong>
+              </article>
+            </div>
+            <p class="space-data-modal__summary-copy" id="space-data-summary-copy">
+              Cryo chamber external monitor linked.
+            </p>
+          </section>
+          <div class="armory-modal__content dossier-modal__content space-data-modal__content" id="space-data-modal-body">
+            <div class="dossier-modal__tabs space-data-modal__tabs" role="tablist" aria-label="Schede dati spaziali">
+              <button
+                class="dossier-modal__tab is-active"
+                id="space-data-tab-iss"
+                type="button"
+                role="tab"
+                aria-selected="true"
+                aria-controls="space-data-panel-iss"
+                data-space-tab="iss"
+              >
+                ISS LIVE
+              </button>
+              <button
+                class="dossier-modal__tab"
+                id="space-data-tab-launch"
+                type="button"
+                role="tab"
+                aria-selected="false"
+                aria-controls="space-data-panel-launch"
+                data-space-tab="launch"
+              >
+                NEXT LAUNCH
+              </button>
+              <button
+                class="dossier-modal__tab"
+                id="space-data-tab-system"
+                type="button"
+                role="tab"
+                aria-selected="false"
+                aria-controls="space-data-panel-system"
+                data-space-tab="system"
+              >
+                SYSTEM FEED
+              </button>
+              <button
+                class="dossier-modal__tab"
+                id="space-data-tab-earth"
+                type="button"
+                role="tab"
+                aria-selected="false"
+                aria-controls="space-data-panel-earth"
+                data-space-tab="earth"
+              >
+                EARTH FEED
+              </button>
+            </div>
+
+            <section
+              class="space-data-panel is-active"
+              id="space-data-panel-iss"
+              role="tabpanel"
+              aria-labelledby="space-data-tab-iss"
+              data-space-panel="iss"
+            >
+              <div class="space-data-panel__header">
+                <span class="space-data-panel__eyebrow">WHERE THE ISS AT / LIVE ORBIT TRACK</span>
+                <span class="space-data-badge space-data-badge--lost" id="iss-status-badge">SIGNAL LOST</span>
+              </div>
+              <div class="space-data-grid">
+                <article class="space-data-stat">
+                  <span class="space-data-stat__label">Latitudine</span>
+                  <strong class="space-data-stat__value" id="iss-latitude">--</strong>
+                </article>
+                <article class="space-data-stat">
+                  <span class="space-data-stat__label">Longitudine</span>
+                  <strong class="space-data-stat__value" id="iss-longitude">--</strong>
+                </article>
+                <article class="space-data-stat">
+                  <span class="space-data-stat__label">Altitudine</span>
+                  <strong class="space-data-stat__value" id="iss-altitude">--</strong>
+                </article>
+                <article class="space-data-stat">
+                  <span class="space-data-stat__label">Velocita</span>
+                  <strong class="space-data-stat__value" id="iss-velocity">--</strong>
+                </article>
+                <article class="space-data-stat space-data-stat--full">
+                  <span class="space-data-stat__label">Timestamp Ultimo Aggiornamento</span>
+                  <strong class="space-data-stat__value" id="iss-timestamp">--</strong>
+                </article>
+              </div>
+              <p class="space-data-panel__note" id="iss-note">
+                Waiting for orbital lock from the external station feed.
+              </p>
+            </section>
+
+            <section
+              class="space-data-panel"
+              id="space-data-panel-launch"
+              role="tabpanel"
+              aria-labelledby="space-data-tab-launch"
+              data-space-panel="launch"
+              hidden
+            >
+              <div class="space-data-panel__header">
+                <span class="space-data-panel__eyebrow">LAUNCH LIBRARY / UPCOMING WINDOW</span>
+                <span class="space-data-badge space-data-badge--cyan" id="launch-status-badge">NO MANIFEST</span>
+              </div>
+              <div class="space-data-grid">
+                <article class="space-data-stat space-data-stat--full">
+                  <span class="space-data-stat__label">Nome Missione</span>
+                  <strong class="space-data-stat__value" id="launch-mission-name">--</strong>
+                </article>
+                <article class="space-data-stat">
+                  <span class="space-data-stat__label">Status</span>
+                  <strong class="space-data-stat__value" id="launch-status-name">--</strong>
+                </article>
+                <article class="space-data-stat">
+                  <span class="space-data-stat__label">Data/Ora NET</span>
+                  <strong class="space-data-stat__value" id="launch-net">--</strong>
+                </article>
+                <article class="space-data-stat space-data-stat--full">
+                  <span class="space-data-stat__label">Launch Pad</span>
+                  <strong class="space-data-stat__value" id="launch-pad">--</strong>
+                </article>
+                <article class="space-data-stat space-data-stat--full">
+                  <span class="space-data-stat__label">Agenzia / Provider</span>
+                  <strong class="space-data-stat__value" id="launch-provider">--</strong>
+                </article>
+              </div>
+              <div class="space-data-countdown">
+                <span class="space-data-countdown__label">COUNTDOWN LIVE</span>
+                <strong class="space-data-countdown__value" id="launch-countdown">--:--:--</strong>
+              </div>
+              <p class="space-data-panel__note" id="launch-note">
+                Awaiting next launch window manifest.
+              </p>
+            </section>
+
+            <section
+              class="space-data-panel"
+              id="space-data-panel-system"
+              role="tabpanel"
+              aria-labelledby="space-data-tab-system"
+              data-space-panel="system"
+              hidden
+            >
+              <div class="space-data-panel__header">
+                <span class="space-data-panel__eyebrow">DERIVED SYSTEM FEED / SHIPBOARD READOUT</span>
+                <span class="space-data-badge space-data-badge--cyan" id="system-sync-badge">WAITING</span>
+              </div>
+              <div class="space-data-feed">
+                <div class="space-data-feed__row">
+                  <span class="space-data-feed__label">ORBITAL SIGNAL</span>
+                  <strong class="space-data-feed__value" id="system-orbital-signal">WAITING</strong>
+                </div>
+                <div class="space-data-feed__row">
+                  <span class="space-data-feed__label">EXTERNAL SPACE DATA</span>
+                  <strong class="space-data-feed__value" id="system-space-sync">WAITING</strong>
+                </div>
+                <div class="space-data-feed__row">
+                  <span class="space-data-feed__label">LAST SYNC</span>
+                  <strong class="space-data-feed__value" id="system-last-sync">--</strong>
+                </div>
+              </div>
+              <div class="space-data-feed__narrative">
+                <p class="space-data-feed__message" id="system-message-primary">
+                  Telemetry channel stable.
+                </p>
+                <p class="space-data-feed__message space-data-feed__message--muted" id="system-message-secondary">
+                  Orbital data stream awaiting first synchronization.
+                </p>
+              </div>
+            </section>
+
+            <section
+              class="space-data-panel"
+              id="space-data-panel-earth"
+              role="tabpanel"
+              aria-labelledby="space-data-tab-earth"
+              data-space-panel="earth"
+              hidden
+            >
+              <div class="space-data-panel__header">
+                <span class="space-data-panel__eyebrow">NOAA GOES / LIVE EARTH IMAGE MONITOR</span>
+                <span class="space-data-badge space-data-badge--cyan">SECONDARY</span>
+              </div>
+              <div class="space-data-video-shell space-data-video-shell--earth">
+                <img
+                  class="space-data-video space-data-video--image"
+                  id="earth-feed-image"
+                  src=""
+                  alt=""
+                  decoding="async"
+                >
+              </div>
+              <div class="space-data-grid">
+                <article class="space-data-stat space-data-stat--full">
+                  <span class="space-data-stat__label">Timestamp Immagine</span>
+                  <strong class="space-data-stat__value" id="earth-feed-timestamp">--</strong>
+                </article>
+                <article class="space-data-stat space-data-stat--full">
+                  <span class="space-data-stat__label">Sorgente</span>
+                  <strong class="space-data-stat__value" id="earth-feed-source">NASA EPIC</strong>
+                </article>
+              </div>
+              <p class="space-data-panel__note">
+                Primary source: NOAA GOES full-disk GeoColor live imagery. Fallback source: NASA EPIC latest available Earth frame. This panel can still be disabled via the <code>ENABLE_EXTERNAL_VIDEO_FEED</code> constant in <code>script.js</code>.
+              </p>
             </section>
           </div>
         </article>

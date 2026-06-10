@@ -105,6 +105,36 @@ const FLICKER_STORAGE_KEY = "space-bruno-flicker-effects-v1";
 const ARMORY_SCENE_STORAGE_KEY = "space-bruno-armory-scene-v2";
 const ARMORY_EXPORT_FILE_NAME = "armory-placements.json";
 const ARMORY_PASSWORD = "2001";
+const ENABLE_EXTERNAL_VIDEO_FEED = true;
+const ISS_ENDPOINT = "https://api.wheretheiss.at/v1/satellites/25544";
+const NEXT_LAUNCH_ENDPOINT = "https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=8&hide_recent_previous=true";
+const NOAA_EARTH_FEED_PAGE = "https://www.star.nesdis.noaa.gov/goes/fulldisk.php?sat=G16";
+const NASA_EARTH_FEED_METADATA_ENDPOINT = "https://epic.gsfc.nasa.gov/api/natural";
+const ISS_REFRESH_INTERVAL = 5000;
+const NEXT_LAUNCH_REFRESH_INTERVAL = 15 * 60 * 1000;
+const EARTH_FEED_REFRESH_INTERVAL = 5 * 60 * 1000;
+const SPACE_DATA_TICK_INTERVAL = 1000;
+const SPACE_DATA_MESSAGE_INTERVAL = 8000;
+const SPACE_DATA_COPY = {
+  healthy: [
+    "Telemetry channel stable",
+    "Cryo chamber external monitor linked",
+    "Orbital data stream synchronized",
+    "Launch window analysis online",
+  ],
+  partial: [
+    "Primary orbital lock retained from last sync",
+    "Launch manifest relay refreshing",
+    "External monitor running on partial data",
+    "Telemetry channel stable, secondary feed degraded",
+  ],
+  lost: [
+    "Awaiting orbital lock reacquisition",
+    "External telemetry link unavailable",
+    "Launch relay outside current access window",
+    "Deep-space monitor holding standby state",
+  ],
+};
 const ARMORY_ALPHA_THRESHOLD = 24;
 const FLICKER_DEFAULT_EFFECTS = [
   {
@@ -271,6 +301,44 @@ const dossierModalBio = document.getElementById("dossier-modal-bio");
 const dossierModalLog = document.getElementById("dossier-modal-log");
 const dossierModalClose = document.getElementById("dossier-modal-close");
 const dossierModalTabs = document.querySelectorAll("[data-dossier-tab]");
+const spaceDataTrigger = document.getElementById("space-data-trigger");
+const spaceDataModal = document.getElementById("space-data-modal");
+const spaceDataModalPanel = spaceDataModal?.querySelector(".space-data-modal__panel");
+const spaceDataModalBody = document.getElementById("space-data-modal-body");
+const spaceDataModalClose = document.getElementById("space-data-modal-close");
+const spaceDataModalTabs = document.querySelectorAll("[data-space-tab]");
+const spaceDataModalPanels = document.querySelectorAll("[data-space-panel]");
+const spaceDataEarthTab = document.getElementById("space-data-tab-earth");
+const spaceDataEarthPanel = document.getElementById("space-data-panel-earth");
+const spaceDataSummarySignal = document.getElementById("space-data-summary-signal");
+const spaceDataSummarySync = document.getElementById("space-data-summary-sync");
+const spaceDataSummaryIss = document.getElementById("space-data-summary-iss");
+const spaceDataSummaryCountdown = document.getElementById("space-data-summary-countdown");
+const spaceDataSummaryCopy = document.getElementById("space-data-summary-copy");
+const issStatusBadge = document.getElementById("iss-status-badge");
+const issLatitude = document.getElementById("iss-latitude");
+const issLongitude = document.getElementById("iss-longitude");
+const issAltitude = document.getElementById("iss-altitude");
+const issVelocity = document.getElementById("iss-velocity");
+const issTimestamp = document.getElementById("iss-timestamp");
+const issNote = document.getElementById("iss-note");
+const launchStatusBadge = document.getElementById("launch-status-badge");
+const launchMissionName = document.getElementById("launch-mission-name");
+const launchStatusName = document.getElementById("launch-status-name");
+const launchNet = document.getElementById("launch-net");
+const launchPad = document.getElementById("launch-pad");
+const launchProvider = document.getElementById("launch-provider");
+const launchCountdown = document.getElementById("launch-countdown");
+const launchNote = document.getElementById("launch-note");
+const systemSyncBadge = document.getElementById("system-sync-badge");
+const systemOrbitalSignal = document.getElementById("system-orbital-signal");
+const systemSpaceSync = document.getElementById("system-space-sync");
+const systemLastSync = document.getElementById("system-last-sync");
+const systemMessagePrimary = document.getElementById("system-message-primary");
+const systemMessageSecondary = document.getElementById("system-message-secondary");
+const earthFeedImage = document.getElementById("earth-feed-image");
+const earthFeedTimestamp = document.getElementById("earth-feed-timestamp");
+const earthFeedSource = document.getElementById("earth-feed-source");
 const halTrigger = document.getElementById("hal-trigger");
 const halLogin = document.getElementById("hal-login");
 const halLoginForm = document.getElementById("hal-login-form");
@@ -331,6 +399,7 @@ let armoryHoverPreview = null;
 let armoryEditorGripLayer = null;
 let lastArmoryFocus = null;
 let lastHalFocus = null;
+let lastSpaceDataFocus = null;
 let armoryPlacements = {};
 let shadowPlacements = {};
 let flickerEffects = [];
@@ -351,6 +420,37 @@ const dossierModalState = {
   room: "bruno",
   tab: "bio",
 };
+const spaceDataState = {
+  tab: "iss",
+  narrativeIndex: 0,
+  iss: {
+    loading: false,
+    error: null,
+    data: null,
+    lastSync: 0,
+  },
+  launch: {
+    loading: false,
+    error: null,
+    data: null,
+    lastSync: 0,
+  },
+  earth: {
+    loading: false,
+    error: null,
+    data: null,
+    lastSync: 0,
+    imageSrc: "",
+    sourceLabel: "NOAA GOES / NASA EPIC",
+  },
+  timers: {
+    iss: 0,
+    launch: 0,
+    earth: 0,
+    tick: 0,
+    narrative: 0,
+  },
+};
 const alienIdleState = {
   variant: "idle",
   idleLoopsUntilFart: 2,
@@ -364,6 +464,11 @@ if (armoryModal) {
 if (dossierModal) {
   dossierModal.inert = true;
   dossierModal.setAttribute("inert", "");
+}
+
+if (spaceDataModal) {
+  spaceDataModal.inert = true;
+  spaceDataModal.setAttribute("inert", "");
 }
 
 if (halLogin) {
@@ -2751,6 +2856,766 @@ function handleDossierModalWheel(event) {
   dossierModalBody.scrollTop = nextScrollTop;
 }
 
+function isSpaceDataEarthFeedEnabled() {
+  return ENABLE_EXTERNAL_VIDEO_FEED && Boolean(earthFeedImage);
+}
+
+function normalizeSpaceDataTab(nextTab) {
+  if (nextTab === "launch" || nextTab === "system") {
+    return nextTab;
+  }
+
+  if (nextTab === "earth" && isSpaceDataEarthFeedEnabled()) {
+    return "earth";
+  }
+
+  return "iss";
+}
+
+function resetSpaceDataScroll() {
+  if (!spaceDataModalBody) {
+    return;
+  }
+
+  spaceDataModalBody.scrollTop = 0;
+}
+
+function setSpaceDataBadge(element, tone, text) {
+  if (!element) {
+    return;
+  }
+
+  element.classList.remove(
+    "space-data-badge--green",
+    "space-data-badge--amber",
+    "space-data-badge--cyan",
+    "space-data-badge--lost",
+  );
+  element.classList.add(`space-data-badge--${tone}`);
+  element.textContent = text;
+}
+
+function ensureSpaceDataEarthFeedState() {
+  const isEnabled = isSpaceDataEarthFeedEnabled();
+
+  if (spaceDataEarthTab) {
+    spaceDataEarthTab.hidden = !isEnabled;
+  }
+
+  if (!isEnabled && spaceDataState.tab === "earth") {
+    spaceDataState.tab = "iss";
+  }
+
+  if (spaceDataEarthPanel) {
+    const isEarthActive = isEnabled && spaceDataState.tab === "earth";
+    spaceDataEarthPanel.hidden = !isEarthActive;
+    spaceDataEarthPanel.classList.toggle("is-active", isEarthActive);
+  }
+
+  if (!isEnabled && earthFeedImage) {
+    earthFeedImage.removeAttribute("src");
+    earthFeedImage.alt = "";
+    spaceDataState.earth.imageSrc = "";
+  }
+}
+
+function setSpaceDataTab(nextTab) {
+  const resolvedTab = normalizeSpaceDataTab(nextTab);
+  spaceDataState.tab = resolvedTab;
+
+  for (const tab of spaceDataModalTabs) {
+    const isActive = tab.dataset.spaceTab === resolvedTab;
+    tab.classList.toggle("is-active", isActive);
+    tab.setAttribute("aria-selected", String(isActive));
+    tab.tabIndex = isActive ? 0 : -1;
+  }
+
+  for (const panel of spaceDataModalPanels) {
+    const isActive = panel.dataset.spacePanel === resolvedTab;
+    panel.classList.toggle("is-active", isActive);
+    panel.hidden = !isActive;
+  }
+
+  ensureSpaceDataEarthFeedState();
+
+  resetSpaceDataScroll();
+}
+
+function formatTelemetryTimestamp(value) {
+  if (!Number.isFinite(value)) {
+    return "--";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "--";
+  }
+
+  return `${new Intl.DateTimeFormat("it-IT", {
+    dateStyle: "medium",
+    timeStyle: "medium",
+    timeZone: "UTC",
+  }).format(date)} UTC`;
+}
+
+function formatCoordinate(value, positiveDirection, negativeDirection) {
+  if (!Number.isFinite(value)) {
+    return "--";
+  }
+
+  const direction = value >= 0 ? positiveDirection : negativeDirection;
+  return `${Math.abs(value).toFixed(3)}° ${direction}`;
+}
+
+function formatAltitude(value) {
+  return Number.isFinite(value) ? `${value.toFixed(1)} km` : "--";
+}
+
+function formatVelocity(value) {
+  return Number.isFinite(value)
+    ? `${Math.round(value).toLocaleString("it-IT")} km/h`
+    : "--";
+}
+
+function formatLaunchCountdown(target) {
+  if (!target) {
+    return "--:--:--";
+  }
+
+  const targetTime = new Date(target).getTime();
+  if (Number.isNaN(targetTime)) {
+    return "--:--:--";
+  }
+
+  const delta = targetTime - Date.now();
+  if (delta <= 0) {
+    return "WINDOW OPEN";
+  }
+
+  const totalSeconds = Math.floor(delta / 1000);
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const hh = String(hours).padStart(2, "0");
+  const mm = String(minutes).padStart(2, "0");
+  const ss = String(seconds).padStart(2, "0");
+
+  return days > 0
+    ? `${days}D ${hh}:${mm}:${ss}`
+    : `${hh}:${mm}:${ss}`;
+}
+
+function getLatestEarthFeedItem(items) {
+  if (!Array.isArray(items) || !items.length) {
+    return null;
+  }
+
+  return items.reduce((latestItem, currentItem) => {
+    const latestTime = new Date(latestItem?.date ?? "").getTime();
+    const currentTime = new Date(currentItem?.date ?? "").getTime();
+
+    if (!Number.isFinite(latestTime)) {
+      return currentItem;
+    }
+
+    if (!Number.isFinite(currentTime)) {
+      return latestItem;
+    }
+
+    return currentTime > latestTime ? currentItem : latestItem;
+  }, items[0]);
+}
+
+function buildNasaEarthFeedImageUrl(item) {
+  if (!item?.date || !item?.image) {
+    return "";
+  }
+
+  const [datePart] = String(item.date).split(" ");
+  const [year, month, day] = datePart.split("-");
+
+  if (!year || !month || !day) {
+    return "";
+  }
+
+  return `https://epic.gsfc.nasa.gov/archive/natural/${year}/${month}/${day}/png/${item.image}.png`;
+}
+
+function parseNoaaTimestampCode(timestampCode) {
+  if (!/^\d{11}$/.test(timestampCode)) {
+    return NaN;
+  }
+
+  const year = Number(timestampCode.slice(0, 4));
+  const dayOfYear = Number(timestampCode.slice(4, 7));
+  const hour = Number(timestampCode.slice(7, 9));
+  const minute = Number(timestampCode.slice(9, 11));
+  const date = new Date(Date.UTC(year, 0, 1, hour, minute));
+  date.setUTCDate(dayOfYear);
+  return date.getTime();
+}
+
+function extractNoaaEarthFrame(html) {
+  if (typeof html !== "string" || !html) {
+    return null;
+  }
+
+  const matches = [...html.matchAll(
+    /https:\/\/cdn\.star\.nesdis\.noaa\.gov\/GOES\d+\/ABI\/FD\/GEOCOLOR\/(\d{11})_GOES\d+-ABI-FD-GEOCOLOR-(1808x1808|678x678|339x339)\.jpg/g,
+  )];
+
+  if (!matches.length) {
+    return null;
+  }
+
+  const preferredMatch = matches.find((match) => match[2] === "1808x1808") ?? matches[0];
+  return {
+    imageSrc: preferredMatch[0],
+    timestampCode: preferredMatch[1],
+    sourceLabel: "NOAA GOES-East / GeoColor",
+  };
+}
+
+function formatIssVectorSummary(data) {
+  if (!data) {
+    return "NO LOCK";
+  }
+
+  const lat = Number.isFinite(data.latitude) ? data.latitude.toFixed(1) : "--";
+  const lon = Number.isFinite(data.longitude) ? data.longitude.toFixed(1) : "--";
+  return `LAT ${lat} / LON ${lon}`;
+}
+
+function getIssSignalState() {
+  if (!spaceDataState.iss.data || !spaceDataState.iss.lastSync) {
+    return "lost";
+  }
+
+  const payloadTimestamp = Number(spaceDataState.iss.data.timestamp) * 1000;
+  const freshestTimestamp = Math.max(spaceDataState.iss.lastSync, payloadTimestamp || 0);
+  const age = Date.now() - freshestTimestamp;
+
+  if (age <= ISS_REFRESH_INTERVAL * 3) {
+    return "active";
+  }
+
+  if (age <= ISS_REFRESH_INTERVAL * 10) {
+    return "degraded";
+  }
+
+  return "lost";
+}
+
+function getSpaceSyncState() {
+  const hasIss = Boolean(spaceDataState.iss.data);
+  const hasLaunch = Boolean(spaceDataState.launch.data);
+
+  if (hasIss && hasLaunch) {
+    return "synced";
+  }
+
+  if (hasIss || hasLaunch) {
+    return "partial";
+  }
+
+  return "waiting";
+}
+
+function getSignalLabel(signalState) {
+  if (signalState === "active") {
+    return "ACTIVE";
+  }
+
+  if (signalState === "degraded") {
+    return "DEGRADED";
+  }
+
+  return "LOST";
+}
+
+function getSyncLabel(syncState) {
+  if (syncState === "synced") {
+    return "SYNCED";
+  }
+
+  if (syncState === "partial") {
+    return "PARTIAL";
+  }
+
+  return "WAITING";
+}
+
+function getToneForSignal(signalState) {
+  if (signalState === "active") {
+    return "green";
+  }
+
+  if (signalState === "degraded") {
+    return "amber";
+  }
+
+  return "lost";
+}
+
+function getToneForSync(syncState) {
+  if (syncState === "synced") {
+    return "green";
+  }
+
+  if (syncState === "partial") {
+    return "amber";
+  }
+
+  return "cyan";
+}
+
+function getToneForLaunchStatus(launch) {
+  const statusName = launch?.status?.name?.toLowerCase() ?? "";
+
+  if (statusName.includes("failure") || statusName.includes("scrub") || statusName.includes("cancel")) {
+    return "lost";
+  }
+
+  if (
+    statusName.includes("hold")
+    || statusName.includes("determined")
+    || statusName.includes("partial")
+  ) {
+    return "amber";
+  }
+
+  if (statusName.includes("go") || statusName.includes("success") || statusName.includes("flight")) {
+    return "green";
+  }
+
+  return "cyan";
+}
+
+function getLaunchPadLabel(launch) {
+  const padName = launch?.pad?.name;
+  const locationName = launch?.pad?.location?.name;
+
+  if (padName && locationName) {
+    return `${padName} / ${locationName}`;
+  }
+
+  return padName || locationName || "--";
+}
+
+function getLaunchProviderLabel(launch) {
+  return (
+    launch?.launch_service_provider?.name
+    || launch?.mission?.agencies?.[0]?.name
+    || "--"
+  );
+}
+
+function getLastSpaceSyncLabel() {
+  const lastSync = Math.max(spaceDataState.iss.lastSync || 0, spaceDataState.launch.lastSync || 0);
+  return lastSync ? formatTelemetryTimestamp(lastSync) : "--";
+}
+
+function getSpaceDataMessageBucket() {
+  const signalState = getIssSignalState();
+  const syncState = getSpaceSyncState();
+
+  if (signalState === "lost" && syncState === "waiting") {
+    return "lost";
+  }
+
+  if (signalState === "degraded" || syncState === "partial") {
+    return "partial";
+  }
+
+  return "healthy";
+}
+
+function getSpaceDataMessages() {
+  const bucket = getSpaceDataMessageBucket();
+  const messages = SPACE_DATA_COPY[bucket];
+  const primary = messages[spaceDataState.narrativeIndex % messages.length];
+  let secondary = "Orbital data stream synchronized.";
+
+  if (spaceDataState.launch.error && spaceDataState.launch.data) {
+    secondary = "Launch relay degraded. Retaining last known countdown.";
+  } else if (spaceDataState.launch.error) {
+    secondary = "Launch manifest relay unavailable.";
+  } else if (spaceDataState.iss.error && spaceDataState.iss.data) {
+    secondary = "Orbital lock cached while uplink recovers.";
+  } else if (spaceDataState.iss.error) {
+    secondary = "Awaiting first orbital lock from ISS telemetry.";
+  } else if (spaceDataState.iss.data && spaceDataState.launch.data) {
+    secondary = "Cryo chamber external monitor linked.";
+  } else if (spaceDataState.iss.data) {
+    secondary = "ISS vector active. Launch manifest pending.";
+  } else if (spaceDataState.launch.data) {
+    secondary = "Launch window acquired. Orbital lock still pending.";
+  }
+
+  return { primary, secondary };
+}
+
+function renderIssPanel() {
+  const signalState = getIssSignalState();
+  setSpaceDataBadge(issStatusBadge, getToneForSignal(signalState), `ISS LOCK ${getSignalLabel(signalState)}`);
+
+  if (spaceDataState.iss.data) {
+    issLatitude.textContent = formatCoordinate(spaceDataState.iss.data.latitude, "N", "S");
+    issLongitude.textContent = formatCoordinate(spaceDataState.iss.data.longitude, "E", "W");
+    issAltitude.textContent = formatAltitude(spaceDataState.iss.data.altitude);
+    issVelocity.textContent = formatVelocity(spaceDataState.iss.data.velocity);
+    issTimestamp.textContent = formatTelemetryTimestamp(Number(spaceDataState.iss.data.timestamp) * 1000);
+
+    if (spaceDataState.iss.error) {
+      issNote.textContent = "Signal degraded. Showing the last locked ISS vector.";
+    } else {
+      issNote.textContent = "External orbital uplink refreshes every 5 seconds.";
+    }
+    return;
+  }
+
+  issLatitude.textContent = "--";
+  issLongitude.textContent = "--";
+  issAltitude.textContent = "--";
+  issVelocity.textContent = "--";
+  issTimestamp.textContent = "--";
+  issNote.textContent = spaceDataState.iss.error
+    ? "Unable to acquire the ISS telemetry relay."
+    : "Waiting for orbital lock from the external station feed.";
+}
+
+function renderLaunchPanel() {
+  const launch = spaceDataState.launch.data;
+  const launchTone = getToneForLaunchStatus(launch);
+  const launchStatus = launch?.status?.name?.toUpperCase() ?? "NO MANIFEST";
+  setSpaceDataBadge(launchStatusBadge, launch ? launchTone : "cyan", launchStatus);
+
+  launchMissionName.textContent = launch?.name ?? "--";
+  launchStatusName.textContent = launch?.status?.name ?? "--";
+  launchNet.textContent = launch?.net ? formatTelemetryTimestamp(new Date(launch.net).getTime()) : "--";
+  launchPad.textContent = getLaunchPadLabel(launch);
+  launchProvider.textContent = getLaunchProviderLabel(launch);
+  launchCountdown.textContent = formatLaunchCountdown(launch?.net);
+
+  if (launch && spaceDataState.launch.error) {
+    launchNote.textContent = "Launch feed degraded. Countdown is based on the last synchronized manifest.";
+    return;
+  }
+
+  if (launch) {
+    launchNote.textContent = "NET countdown updates locally every second using the live launch manifest.";
+    return;
+  }
+
+  launchNote.textContent = spaceDataState.launch.error
+    ? "Next launch manifest unavailable right now."
+    : "Awaiting next launch window manifest.";
+}
+
+function renderEarthFeedPanel() {
+  if (!earthFeedImage || !earthFeedTimestamp || !earthFeedSource) {
+    return;
+  }
+
+  const earthData = spaceDataState.earth.data;
+  const earthTimestamp = Number(earthData?.timestampMs);
+
+  earthFeedTimestamp.textContent = Number.isFinite(earthTimestamp)
+    ? formatTelemetryTimestamp(earthTimestamp)
+    : "--";
+  earthFeedSource.textContent = spaceDataState.earth.sourceLabel;
+
+  if (earthData && spaceDataState.earth.imageSrc) {
+    if (earthFeedImage.src !== spaceDataState.earth.imageSrc) {
+      earthFeedImage.src = spaceDataState.earth.imageSrc;
+    }
+
+    earthFeedImage.alt = `Ultima immagine Terra NASA EPIC del ${earthFeedTimestamp.textContent}`;
+    return;
+  }
+
+  earthFeedImage.removeAttribute("src");
+  earthFeedImage.alt = "";
+}
+
+function renderSystemPanel() {
+  const signalState = getIssSignalState();
+  const syncState = getSpaceSyncState();
+  const { primary, secondary } = getSpaceDataMessages();
+
+  setSpaceDataBadge(systemSyncBadge, getToneForSync(syncState), getSyncLabel(syncState));
+  systemOrbitalSignal.textContent = getSignalLabel(signalState);
+  systemSpaceSync.textContent = getSyncLabel(syncState);
+  systemLastSync.textContent = getLastSpaceSyncLabel();
+  systemMessagePrimary.textContent = primary;
+  systemMessageSecondary.textContent = secondary;
+}
+
+function renderSpaceDataSummary() {
+  const signalState = getIssSignalState();
+  const syncState = getSpaceSyncState();
+  const { primary } = getSpaceDataMessages();
+
+  spaceDataSummarySignal.textContent = getSignalLabel(signalState);
+  spaceDataSummarySync.textContent = getSyncLabel(syncState);
+  spaceDataSummaryIss.textContent = formatIssVectorSummary(spaceDataState.iss.data);
+  spaceDataSummaryCountdown.textContent = formatLaunchCountdown(spaceDataState.launch.data?.net);
+  spaceDataSummaryCopy.textContent = primary;
+}
+
+function renderSpaceDataModal() {
+  renderSpaceDataSummary();
+  renderIssPanel();
+  renderLaunchPanel();
+  renderEarthFeedPanel();
+  renderSystemPanel();
+}
+
+function describeSpaceDataError(error) {
+  const message = error instanceof Error ? error.message : String(error);
+
+  if (message.includes("429")) {
+    return "Relay throttled";
+  }
+
+  if (message.includes("Failed to fetch")) {
+    return "Link unavailable";
+  }
+
+  return "Telemetry unavailable";
+}
+
+async function fetchIssTelemetry() {
+  if (spaceDataState.iss.loading) {
+    return;
+  }
+
+  spaceDataState.iss.loading = true;
+
+  try {
+    const response = await fetch(ISS_ENDPOINT, {
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    spaceDataState.iss.data = await response.json();
+    spaceDataState.iss.error = null;
+    spaceDataState.iss.lastSync = Date.now();
+  } catch (error) {
+    spaceDataState.iss.error = describeSpaceDataError(error);
+  } finally {
+    spaceDataState.iss.loading = false;
+    renderSpaceDataModal();
+  }
+}
+
+async function fetchNextLaunchTelemetry() {
+  if (spaceDataState.launch.loading) {
+    return;
+  }
+
+  spaceDataState.launch.loading = true;
+
+  try {
+    const response = await fetch(NEXT_LAUNCH_ENDPOINT, {
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const payload = await response.json();
+    const launches = Array.isArray(payload?.results) ? payload.results : [];
+    const nextUpcomingLaunch = launches.find((launch) => {
+      const netTime = new Date(launch?.net ?? "").getTime();
+      return Number.isFinite(netTime) && netTime > Date.now();
+    });
+
+    spaceDataState.launch.data = nextUpcomingLaunch ?? launches[0] ?? null;
+    spaceDataState.launch.error = null;
+    spaceDataState.launch.lastSync = Date.now();
+  } catch (error) {
+    spaceDataState.launch.error = describeSpaceDataError(error);
+  } finally {
+    spaceDataState.launch.loading = false;
+    renderSpaceDataModal();
+  }
+}
+
+async function fetchEarthFeedTelemetry() {
+  if (spaceDataState.earth.loading || !isSpaceDataEarthFeedEnabled()) {
+    return;
+  }
+
+  spaceDataState.earth.loading = true;
+
+  try {
+    const noaaResponse = await fetch(NOAA_EARTH_FEED_PAGE, {
+      cache: "no-store",
+    });
+
+    if (!noaaResponse.ok) {
+      throw new Error(`HTTP ${noaaResponse.status}`);
+    }
+
+    const noaaHtml = await noaaResponse.text();
+    const noaaFrame = extractNoaaEarthFrame(noaaHtml);
+
+    if (!noaaFrame) {
+      throw new Error("NOAA feed parse failed");
+    }
+
+    spaceDataState.earth.data = {
+      timestampMs: parseNoaaTimestampCode(noaaFrame.timestampCode),
+    };
+    spaceDataState.earth.imageSrc = noaaFrame.imageSrc;
+    spaceDataState.earth.sourceLabel = noaaFrame.sourceLabel;
+    spaceDataState.earth.error = null;
+    spaceDataState.earth.lastSync = Date.now();
+  } catch (error) {
+    try {
+      const nasaResponse = await fetch(NASA_EARTH_FEED_METADATA_ENDPOINT, {
+        cache: "no-store",
+      });
+
+      if (!nasaResponse.ok) {
+        throw new Error(`HTTP ${nasaResponse.status}`);
+      }
+
+      const payload = await nasaResponse.json();
+      const latestEarthFrame = getLatestEarthFeedItem(payload);
+      const nasaTimestamp = latestEarthFrame?.date
+        ? new Date(String(latestEarthFrame.date).replace(" ", "T") + "Z").getTime()
+        : NaN;
+
+      spaceDataState.earth.data = {
+        timestampMs: nasaTimestamp,
+      };
+      spaceDataState.earth.imageSrc = buildNasaEarthFeedImageUrl(latestEarthFrame);
+      spaceDataState.earth.sourceLabel = "NASA DSCOVR / EPIC";
+      spaceDataState.earth.error = null;
+      spaceDataState.earth.lastSync = Date.now();
+    } catch (fallbackError) {
+      spaceDataState.earth.error = describeSpaceDataError(fallbackError);
+    }
+  } finally {
+    spaceDataState.earth.loading = false;
+    renderSpaceDataModal();
+  }
+}
+
+function stopSpaceDataTelemetry() {
+  const timers = Object.values(spaceDataState.timers);
+  for (const timerId of timers) {
+    if (timerId) {
+      window.clearInterval(timerId);
+    }
+  }
+
+  spaceDataState.timers.iss = 0;
+  spaceDataState.timers.launch = 0;
+  spaceDataState.timers.earth = 0;
+  spaceDataState.timers.tick = 0;
+  spaceDataState.timers.narrative = 0;
+}
+
+function startSpaceDataTelemetry() {
+  stopSpaceDataTelemetry();
+  renderSpaceDataModal();
+  void fetchIssTelemetry();
+  void fetchNextLaunchTelemetry();
+  void fetchEarthFeedTelemetry();
+
+  spaceDataState.timers.iss = window.setInterval(() => {
+    void fetchIssTelemetry();
+  }, ISS_REFRESH_INTERVAL);
+
+  spaceDataState.timers.launch = window.setInterval(() => {
+    void fetchNextLaunchTelemetry();
+  }, NEXT_LAUNCH_REFRESH_INTERVAL);
+
+  spaceDataState.timers.earth = window.setInterval(() => {
+    void fetchEarthFeedTelemetry();
+  }, EARTH_FEED_REFRESH_INTERVAL);
+
+  spaceDataState.timers.tick = window.setInterval(() => {
+    renderSpaceDataModal();
+  }, SPACE_DATA_TICK_INTERVAL);
+
+  spaceDataState.timers.narrative = window.setInterval(() => {
+    spaceDataState.narrativeIndex += 1;
+    renderSpaceDataModal();
+  }, SPACE_DATA_MESSAGE_INTERVAL);
+}
+
+function handleSpaceDataModalWheel(event) {
+  if (!spaceDataModal?.classList.contains("is-open") || !spaceDataModalBody) {
+    return;
+  }
+
+  const maxScrollTop = spaceDataModalBody.scrollHeight - spaceDataModalBody.clientHeight;
+  if (maxScrollTop <= 0 || Math.abs(event.deltaY) <= Math.abs(event.deltaX)) {
+    return;
+  }
+
+  event.preventDefault();
+  const nextScrollTop = Math.min(
+    maxScrollTop,
+    Math.max(0, spaceDataModalBody.scrollTop + event.deltaY),
+  );
+  spaceDataModalBody.scrollTop = nextScrollTop;
+}
+
+function openSpaceDataModal(trigger = spaceDataTrigger) {
+  if (!spaceDataModal) {
+    return;
+  }
+
+  closeHalLogin({ restoreFocus: false });
+  closeArmoryItem({ restoreFocus: false });
+  closeDossierModal({ restoreFocus: false });
+  lastSpaceDataFocus = trigger ?? document.activeElement;
+  spaceDataState.tab = normalizeSpaceDataTab(spaceDataState.tab);
+  ensureSpaceDataEarthFeedState();
+  setSpaceDataTab(spaceDataState.tab);
+  renderSpaceDataModal();
+  spaceDataModal.classList.add("is-open");
+  spaceDataModal.inert = false;
+  spaceDataModal.removeAttribute("inert");
+  spaceDataModal.setAttribute("aria-hidden", "false");
+  spaceDataTrigger?.setAttribute("aria-expanded", "true");
+  document.body.classList.add("has-armory-modal");
+  startSpaceDataTelemetry();
+  playOneShot(audioTracks.uiClick, 0.14);
+
+  window.setTimeout(() => {
+    spaceDataModalClose?.focus();
+  }, 0);
+}
+
+function closeSpaceDataModal(options = {}) {
+  if (!spaceDataModal || !spaceDataModal.classList.contains("is-open")) {
+    return;
+  }
+
+  stopSpaceDataTelemetry();
+  spaceDataModal.classList.remove("is-open");
+  spaceDataModal.inert = true;
+  spaceDataModal.setAttribute("inert", "");
+  spaceDataModal.setAttribute("aria-hidden", "true");
+  spaceDataTrigger?.setAttribute("aria-expanded", "false");
+  document.body.classList.remove("has-armory-modal");
+
+  if (options.restoreFocus !== false && typeof lastSpaceDataFocus?.focus === "function") {
+    lastSpaceDataFocus.focus();
+  }
+}
+
 function openHalLogin() {
   if (!halLogin || !halPassword) {
     return;
@@ -3653,6 +4518,14 @@ dossierTrigger?.addEventListener("click", () => {
   openDossierModal(activeRoom, dossierTrigger);
 });
 
+spaceDataTrigger?.addEventListener("click", () => {
+  if (armoryEditorState.active) {
+    return;
+  }
+
+  openSpaceDataModal(spaceDataTrigger);
+});
+
 alienToggle?.addEventListener("click", () => {
   toggleAlienRelease();
 });
@@ -3715,10 +4588,27 @@ dossierModal?.querySelector(".armory-modal__scrim")?.addEventListener("click", (
 
 dossierModalPanel?.addEventListener("wheel", handleDossierModalWheel, { passive: false });
 
+spaceDataModalClose?.addEventListener("click", () => {
+  closeSpaceDataModal();
+});
+
+spaceDataModal?.querySelector(".armory-modal__scrim")?.addEventListener("click", () => {
+  closeSpaceDataModal();
+});
+
+spaceDataModalPanel?.addEventListener("wheel", handleSpaceDataModalWheel, { passive: false });
+
 for (const tab of dossierModalTabs) {
   tab.addEventListener("click", () => {
     playOneShot(audioTracks.uiClick, 0.12);
     setDossierTab(tab.dataset.dossierTab);
+  });
+}
+
+for (const tab of spaceDataModalTabs) {
+  tab.addEventListener("click", () => {
+    playOneShot(audioTracks.uiClick, 0.12);
+    setSpaceDataTab(tab.dataset.spaceTab);
   });
 }
 
@@ -3838,6 +4728,11 @@ document.addEventListener("keydown", (event) => {
     return;
   }
 
+  if (spaceDataModal?.classList.contains("is-open")) {
+    closeSpaceDataModal();
+    return;
+  }
+
   if (dossierModal?.classList.contains("is-open")) {
     closeDossierModal();
     return;
@@ -3875,6 +4770,9 @@ document.addEventListener("visibilitychange", () => {
 });
 
 initializeArmoryHotspots();
+ensureSpaceDataEarthFeedState();
+setSpaceDataTab(spaceDataState.tab);
+renderSpaceDataModal();
 layoutStasisBay();
 layoutRobotBay();
 layoutBrunoWalkBay();
